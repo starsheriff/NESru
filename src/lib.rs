@@ -1,31 +1,53 @@
 
-struct StatusRegisterBits {
-
+enum StatusRegisterBits {
+    CarryFlag = 0,
+    ZeroFlag = 1,
+    InterruptDisable = 2,
+    DecimalMode = 3,
+    BreakCommand = 4,
+    // 5 is unused
+    OverflowFlag = 6,
+    NegativeFlag = 7,
 }
 
 struct StatusRegister {
-    CarryFlag: bool,
-    ZeroFlag: bool,
-    InterruptDisable: bool,
-    DecimalMode: bool,
-    BreakCommand: bool,
-    OverflowFlag: bool,
+    carry_flag: bool,
+    zero_flag: bool,
+    interrupt_disable: bool,
+    decimal_mode: bool,
+    break_command: bool,
+    overflow_flag: bool,
+    negative_flag: bool,
 }
 
 impl StatusRegister {
     fn new() -> StatusRegister {
         StatusRegister {
-            CarryFlag: false,
-            ZeroFlag: false,
-            InterruptDisable: false,
-            DecimalMode: false,
-            BreakCommand: false,
-            OverflowFlag: false,
+            carry_flag: false,
+            zero_flag: false,
+            interrupt_disable: false,
+            decimal_mode: false,
+            break_command: false,
+            overflow_flag: false,
+            negative_flag: false,
         }
     }
 
     fn from_u8() -> StatusRegister {
+        //TODO: implementation
         StatusRegister::new()
+    }
+
+    fn to_u8(&self) -> u8 {
+        let mut sr = 0x00; // inital return value set to 0b00000000
+        sr |= (self.carry_flag as u8) << StatusRegisterBits::CarryFlag as u8;
+        sr |= (self.zero_flag as u8) << StatusRegisterBits::ZeroFlag as u8;
+        sr |= (self.interrupt_disable as u8) << StatusRegisterBits::InterruptDisable as u8;
+        sr |= (self.decimal_mode as u8) << StatusRegisterBits::DecimalMode as u8;
+        sr |= (self.break_command as u8) << StatusRegisterBits::BreakCommand as u8;
+        sr |= (self.overflow_flag as u8) << StatusRegisterBits::OverflowFlag as u8;
+        sr |= (self.negative_flag as u8) << StatusRegisterBits::NegativeFlag as u8;
+        sr
     }
 }
 
@@ -68,8 +90,49 @@ impl CPU {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn status_register_to_u8() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.to_u8(), 0x00);
+
+        sr.carry_flag = true;
+        assert_eq!(sr.to_u8(), 1);
+
+        sr = StatusRegister::new();
+        sr.zero_flag = true;
+        assert_eq!(sr.to_u8(), 2);
+
+        sr = StatusRegister::new();
+        sr.interrupt_disable = true;
+        assert_eq!(sr.to_u8(), 4);
+
+        sr = StatusRegister::new();
+        sr.decimal_mode = true;
+        assert_eq!(sr.to_u8(), 8);
+
+        sr = StatusRegister::new();
+        sr.break_command = true;
+        assert_eq!(sr.to_u8(), 16);
+
+        sr = StatusRegister::new();
+        sr.overflow_flag = true;
+        assert_eq!(sr.to_u8(), 64);
+
+        sr = StatusRegister::new();
+        sr.negative_flag = true;
+        assert_eq!(sr.to_u8(), 128);
+
+        sr = StatusRegister::new();
+        sr.carry_flag = true;
+        sr.interrupt_disable = true;
+        assert_eq!(sr.to_u8(), 4+1);
+
     }
 }
