@@ -1,4 +1,3 @@
-
 enum StatusRegisterBits {
     CarryFlag = 0,
     ZeroFlag = 1,
@@ -10,6 +9,7 @@ enum StatusRegisterBits {
     NegativeFlag = 7,
 }
 
+#[derive(Debug)]
 struct StatusRegister {
     carry_flag: bool,
     zero_flag: bool,
@@ -38,6 +38,16 @@ impl StatusRegister {
         StatusRegister::new()
     }
 
+    fn set_all(&mut self, b: u8) {
+        self.carry_flag = (b >> StatusRegisterBits::CarryFlag as u8) & 0x01 == 1;
+        self.zero_flag = (b >> StatusRegisterBits::ZeroFlag as u8) & 0x01 == 1;
+        self.interrupt_disable = (b >> StatusRegisterBits::InterruptDisable as u8) & 0x01 == 1;
+        self.decimal_mode = (b >> StatusRegisterBits::DecimalMode as u8) & 0x01 == 1;
+        self.break_command = (b >> StatusRegisterBits::BreakCommand as u8) & 0x01 == 1;
+        self.overflow_flag = (b >> StatusRegisterBits::OverflowFlag as u8) & 0x01 == 1;
+        self.negative_flag = (b >> StatusRegisterBits::NegativeFlag as u8) & 0x01 == 1;
+    }
+
     fn to_u8(&self) -> u8 {
         let mut sr = 0x00; // inital return value set to 0b00000000
         sr |= (self.carry_flag as u8) << StatusRegisterBits::CarryFlag as u8;
@@ -61,9 +71,8 @@ struct CPU {
 }
 
 impl CPU {
-
     pub fn new() -> CPU {
-        CPU{
+        CPU {
             accumulator: 0,
             stack_pointer: 0,
             program_counter: 0,
@@ -73,8 +82,7 @@ impl CPU {
         }
     }
 
-    pub fn powerup(&mut self) {
-    }
+    pub fn powerup(&mut self) {}
 
     fn run(&mut self) {
         loop {
@@ -82,11 +90,8 @@ impl CPU {
         }
     }
 
-    fn step(&mut self) {
-    }
-
+    fn step(&mut self) {}
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -95,6 +100,80 @@ mod tests {
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn set_carry_flag() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.carry_flag, false);
+        sr.set_all(0x01);
+        assert_eq!(sr.carry_flag, true);
+    }
+
+    #[test]
+    fn set_zero_flag() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.zero_flag, false);
+        sr.set_all(0x02);
+        assert_eq!(sr.zero_flag, true);
+    }
+
+    #[test]
+    fn set_interrupt_disable() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.interrupt_disable, false);
+        sr.set_all(0x04);
+        assert_eq!(sr.interrupt_disable, true);
+    }
+
+    #[test]
+    fn set_decimal_mode() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.decimal_mode, false);
+        sr.set_all(0x08);
+        assert_eq!(sr.decimal_mode, true);
+    }
+
+    #[test]
+    fn set_break_command() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.break_command, false);
+        sr.set_all(0x10);
+        assert_eq!(sr.break_command, true);
+    }
+
+    #[test]
+    fn set_overflow_flag() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.overflow_flag, false);
+        sr.set_all(0x40);
+        assert_eq!(sr.overflow_flag, true);
+    }
+
+    #[test]
+    fn set_negative_flag() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.negative_flag, false);
+        sr.set_all(0x80);
+        assert_eq!(sr.negative_flag, true);
+    }
+
+    #[test]
+    fn set_all_0000_0011() {
+        let mut sr = StatusRegister::new();
+        assert_eq!(sr.carry_flag, false);
+        assert_eq!(sr.zero_flag, false);
+        sr.set_all(0x03);
+        assert_eq!(sr.carry_flag, true);
+        assert_eq!(sr.zero_flag, true);
+    }
+
+    #[test]
+    fn set_all_0xFF() {
+        let mut sr = StatusRegister::new();
+        sr.set_all(0xFF);
+        // not all bits are used!
+        assert_eq!(sr.to_u8(), 0xDF);
     }
 
     #[test]
@@ -132,7 +211,6 @@ mod tests {
         sr = StatusRegister::new();
         sr.carry_flag = true;
         sr.interrupt_disable = true;
-        assert_eq!(sr.to_u8(), 4+1);
-
+        assert_eq!(sr.to_u8(), 4 + 1);
     }
 }
