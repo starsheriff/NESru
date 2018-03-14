@@ -4,7 +4,7 @@ enum StatusRegisterBits {
     InterruptDisable = 2,
     DecimalMode = 3,
     BreakCommand = 4,
-    // 5 is unused
+    UnusedBit = 5,
     OverflowFlag = 6,
     NegativeFlag = 7,
 }
@@ -18,6 +18,7 @@ struct StatusRegister {
     break_command: bool,
     overflow_flag: bool,
     negative_flag: bool,
+    unused_bit: bool,
 }
 
 impl StatusRegister {
@@ -30,6 +31,7 @@ impl StatusRegister {
             break_command: false,
             overflow_flag: false,
             negative_flag: false,
+            unused_bit: false,
         }
     }
 
@@ -46,6 +48,7 @@ impl StatusRegister {
         self.break_command = (b >> StatusRegisterBits::BreakCommand as u8) & 0x01 == 1;
         self.overflow_flag = (b >> StatusRegisterBits::OverflowFlag as u8) & 0x01 == 1;
         self.negative_flag = (b >> StatusRegisterBits::NegativeFlag as u8) & 0x01 == 1;
+        self.unused_bit = (b >> StatusRegisterBits::UnusedBit as u8) & 0x01 == 1;
     }
 
     fn to_u8(&self) -> u8 {
@@ -57,6 +60,7 @@ impl StatusRegister {
         sr |= (self.break_command as u8) << StatusRegisterBits::BreakCommand as u8;
         sr |= (self.overflow_flag as u8) << StatusRegisterBits::OverflowFlag as u8;
         sr |= (self.negative_flag as u8) << StatusRegisterBits::NegativeFlag as u8;
+        sr |= (self.unused_bit as u8) << StatusRegisterBits::UnusedBit as u8;
         sr
     }
 }
@@ -172,8 +176,7 @@ mod tests {
     fn set_all_0xFF() {
         let mut sr = StatusRegister::new();
         sr.set_all(0xFF);
-        // not all bits are used!
-        assert_eq!(sr.to_u8(), 0xDF);
+        assert_eq!(sr.to_u8(), 0xFF);
     }
 
     #[test]
