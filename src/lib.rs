@@ -1,13 +1,14 @@
 enum StatusRegisterBits {
-    CarryFlag = 0,
-    ZeroFlag = 1,
-    InterruptDisable = 2,
-    DecimalMode = 3,
-    BreakCommand = 4,
-    UnusedBit = 5,
-    OverflowFlag = 6,
-    NegativeFlag = 7,
+    CarryFlag = 0, // 0
+    ZeroFlag = 1, // 2
+    InterruptDisable = 2, // 4
+    DecimalMode = 3, // 8
+    BreakCommand = 4, // 16
+    UnusedBit = 5, // 32
+    OverflowFlag = 6, // 64
+    NegativeFlag = 7, // 128
 }
+
 
 #[derive(Debug)]
 struct StatusRegister {
@@ -86,7 +87,26 @@ impl CPU {
         }
     }
 
-    pub fn powerup(&mut self) {}
+    pub fn powerup(&mut self) {
+        self.status_register.set_all(0x34);
+        self.accumulator = 0;
+        self.index_x = 0;
+        self.index_y = 0;
+        self.stack_pointer = 0xFD;
+
+        // Remaining tasks: set memory
+        // TODO:    $4017 = 0x00
+        //          $4000-$400F = 0x00
+        // LSFR = 0x00
+    }
+
+    pub fn reset(&mut self) {
+        self.stack_pointer -= 3;
+        self.status_register.interrupt_disable = true;
+
+        // Remaining tasks: set memory
+        // TODO: APU was silenced ($4015 = 0)
+    }
 
     fn run(&mut self) {
         loop {
@@ -215,5 +235,44 @@ mod tests {
         sr.carry_flag = true;
         sr.interrupt_disable = true;
         assert_eq!(sr.to_u8(), 4 + 1);
+    }
+
+    #[test]
+    fn cpu_powerup_state() {
+        let mut cpu = CPU::new();
+
+        cpu.powerup();
+
+        assert_eq!(cpu.accumulator, 0);
+        assert_eq!(cpu.index_x, 0);
+        assert_eq!(cpu.index_y, 0);
+        assert_eq!(cpu.stack_pointer, 0xFD);
+
+        assert_eq!(0x34, 52);
+        assert_eq!(cpu.status_register.unused_bit, true);
+        assert_eq!(cpu.status_register.break_command, true);
+        assert_eq!(cpu.status_register.interrupt_disable, true);
+
+        assert_eq!(cpu.status_register.carry_flag, false);
+        assert_eq!(cpu.status_register.zero_flag, false);
+        assert_eq!(cpu.status_register.decimal_mode, false);
+        assert_eq!(cpu.status_register.overflow_flag, false);
+        assert_eq!(cpu.status_register.negative_flag, false);
+    }
+
+    #[test]
+    fn cpu_reset_state() {
+        let mut cpu = CPU::new();
+        cpu.powerup();
+
+        cpu.status_register.interrupt_disable = false;
+        let sp_before = cpu.stack_pointer;
+        println!("{}", sp_before);
+
+        cpu.reset();
+
+        assert_eq!(cpu.stack_pointer, sp_before-3);
+        assert_eq!(cpu.status_register.interrupt_disable, true);
+        // TODO: test remaining memory addresses
     }
 }
