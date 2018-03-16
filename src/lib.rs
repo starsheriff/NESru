@@ -131,12 +131,6 @@ impl CPU {
         mem.write(0x4015, 0x00);
     }
 
-    fn run(&mut self) {
-        loop {
-            self.step();
-        }
-    }
-
     fn step(&mut self) {}
 }
 
