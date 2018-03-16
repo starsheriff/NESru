@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 enum StatusRegisterBits {
     CarryFlag = 0, // 0
     ZeroFlag = 1, // 2
@@ -95,6 +97,11 @@ struct CPU {
     index_x: u8,
     index_y: u8,
     status_register: StatusRegister,
+
+    /// count the total amount of cycles spent
+    elapsed_cycles: u64,
+    /// delay the cpu for a specific amount of cycles
+    delay_cycles: u8,
 }
 
 impl CPU {
@@ -106,6 +113,9 @@ impl CPU {
             index_x: 0,
             index_y: 0,
             status_register: StatusRegister::new(),
+
+            delay_cycles: 0,
+            elapsed_cycles: 0,
         }
     }
 
@@ -131,8 +141,24 @@ impl CPU {
         mem.write(0x4015, 0x00);
     }
 
-    fn step(&mut self) {}
+    fn step(&mut self, mem: &mut Memory) {
+        self.elapsed_cycles += 1;
+
+        // delay cycles has higher priority than interrupts
+        if(self.delay_cycles > 0) {
+            self.delay_cycles -= 1;
+            return;
+        }
+
+        // TODO: check for interrupts
+    }
 }
+
+//impl Display for CPU {
+    //fn fmt(&self) -> Result<(), std::fmt::Error> {
+        //()
+    //}
+//}
 
 #[cfg(test)]
 mod tests {
@@ -297,5 +323,21 @@ mod tests {
         assert_eq!(cpu.status_register.interrupt_disable, true);
         assert_eq!(mem.read(0x4015), 0);
         // TODO: test remaining memory addresses
+    }
+
+    #[test]
+    fn cpu_delay_cycles() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+
+        cpu.delay_cycles = 3;
+        cpu.step(&mut mem);
+        assert_eq!(cpu.elapsed_cycles, 1);
+        cpu.step(&mut mem);
+        assert_eq!(cpu.elapsed_cycles, 2);
+        cpu.step(&mut mem);
+        assert_eq!(cpu.elapsed_cycles, 3);
     }
 }
