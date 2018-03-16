@@ -1,16 +1,15 @@
 use std::fmt::Display;
 
 enum StatusRegisterBits {
-    CarryFlag = 0, // 0
-    ZeroFlag = 1, // 2
+    CarryFlag = 0,        // 0
+    ZeroFlag = 1,         // 2
     InterruptDisable = 2, // 4
-    DecimalMode = 3, // 8
-    BreakCommand = 4, // 16
-    UnusedBit = 5, // 32
-    OverflowFlag = 6, // 64
-    NegativeFlag = 7, // 128
+    DecimalMode = 3,      // 8
+    BreakCommand = 4,     // 16
+    UnusedBit = 5,        // 32
+    OverflowFlag = 6,     // 64
+    NegativeFlag = 7,     // 128
 }
-
 
 #[derive(Debug)]
 struct StatusRegister {
@@ -68,7 +67,6 @@ impl StatusRegister {
     }
 }
 
-
 const MEM_SIZE: usize = 0xFFFF;
 
 struct Memory {
@@ -77,25 +75,23 @@ struct Memory {
 
 impl Memory {
     pub fn new() -> Memory {
-        Memory{mem: [0;MEM_SIZE]}
+        Memory { mem: [0; MEM_SIZE] }
     }
 
-    pub fn read(&self, addr: usize) -> u8 {
-        self.mem[addr]
+    pub fn read(&self, addr: u16) -> u8 {
+        self.mem[addr as usize]
     }
 
-    pub fn write(&mut self, addr:usize, val: u8) {
+    pub fn write(&mut self, addr: u16, val: u8) {
         // TODO: mirroring? Is it necessary to emulate?
-        self.mem[addr] = val;
+        self.mem[addr as usize] = val;
     }
 
     /// Write a range in memory with a common value. The range is inclusice,
     /// meaning both first and last are written.
     pub fn write_range(&mut self, first: usize, last: usize, val: u8) {
-        for x in (first .. last) {
-            println!("{} - {}", x, self.mem[x]);
+        for x in (first..last) {
             self.mem[x] = val;
-            println!("{} - {}", x, self.mem[x]);
         }
     }
 }
@@ -154,25 +150,36 @@ impl CPU {
         self.elapsed_cycles += 1;
 
         // delay cycles has higher priority than interrupts
-        if(self.delay_cycles > 0) {
+        if (self.delay_cycles > 0) {
             self.delay_cycles -= 1;
             return;
         }
 
         // TODO: check for interrupts
+        //
+
+        match self.program_counter {
+            0x69 => println!("got an opt code!"),
+
+            _ => println!("not implemented"),
+        }
     }
 }
 
+// impl block for instructions
+impl CPU {
+    fn adc(&mut self, mem: &mut Memory) {}
+}
+
 //impl Display for CPU {
-    //fn fmt(&self) -> Result<(), std::fmt::Error> {
-        //()
-    //}
+//fn fmt(&self) -> Result<(), std::fmt::Error> {
+//()
+//}
 //}
 
-
-//struct Instruction {
-    //func: fn,
-//}
+struct Instruction<'a> {
+    func: &'a fn(&mut CPU, &mut Memory),
+}
 
 #[cfg(test)]
 mod tests {
@@ -333,7 +340,7 @@ mod tests {
 
         cpu.reset(&mut mem);
 
-        assert_eq!(cpu.stack_pointer, sp_before-3);
+        assert_eq!(cpu.stack_pointer, sp_before - 3);
         assert_eq!(cpu.status_register.interrupt_disable, true);
         assert_eq!(mem.read(0x4015), 0);
         // TODO: test remaining memory addresses
@@ -355,13 +362,22 @@ mod tests {
         assert_eq!(cpu.elapsed_cycles, 3);
     }
 
-
     #[test]
     fn mem_write_range() {
         let mut mem = Memory::new();
         mem.write_range(0x00FF, 0x0200, 0x04);
-        for x in (0x00FF .. 0x0200) {
+        for x in (0x00FF..0x0200) {
             assert_eq!(mem.read(x), 0x04);
         }
+    }
+
+    #[test]
+    fn test_optcode_0x69() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+        cpu.program_counter = 0x69;
+        cpu.step(&mut mem);
     }
 }
