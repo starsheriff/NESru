@@ -69,8 +69,7 @@ impl StatusRegister {
 }
 
 
-// TODO: size?
-const MEM_SIZE: usize = 0x10000;
+const MEM_SIZE: usize = 0xFFFF;
 
 struct Memory {
     mem: [u8; MEM_SIZE],
@@ -86,7 +85,18 @@ impl Memory {
     }
 
     pub fn write(&mut self, addr:usize, val: u8) {
-        self.mem[addr] = val
+        // TODO: mirroring? Is it necessary to emulate?
+        self.mem[addr] = val;
+    }
+
+    /// Write a range in memory with a common value. The range is inclusice,
+    /// meaning both first and last are written.
+    pub fn write_range(&mut self, first: usize, last: usize, val: u8) {
+        for x in (first .. last) {
+            println!("{} - {}", x, self.mem[x]);
+            self.mem[x] = val;
+            println!("{} - {}", x, self.mem[x]);
+        }
     }
 }
 
@@ -158,6 +168,11 @@ impl CPU {
     //fn fmt(&self) -> Result<(), std::fmt::Error> {
         //()
     //}
+//}
+
+
+//struct Instruction {
+    //func: fn,
 //}
 
 #[cfg(test)]
@@ -339,5 +354,15 @@ mod tests {
         assert_eq!(cpu.elapsed_cycles, 2);
         cpu.step(&mut mem);
         assert_eq!(cpu.elapsed_cycles, 3);
+    }
+
+
+    #[test]
+    fn mem_write_range() {
+        let mut mem = Memory::new();
+        mem.write_range(0x00FF, 0x0200, 0x04);
+        for x in (0x00FF .. 0x0200) {
+            assert_eq!(mem.read(x), 0x04);
+        }
     }
 }
