@@ -103,7 +103,7 @@ impl Memory {
 struct CPU {
     accumulator: u8,
     stack_pointer: u8,
-    program_counter: u8,
+    program_counter: u16,
     index_x: u8,
     index_y: u8,
     status_register: StatusRegister,
