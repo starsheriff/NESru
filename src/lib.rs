@@ -123,12 +123,12 @@ impl CPU {
         mem.write(0x4017, 0x00);
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, mem: &mut Memory) {
         self.stack_pointer -= 3;
         self.status_register.interrupt_disable = true;
 
         // Remaining tasks: set memory
-        // TODO: APU was silenced ($4015 = 0)
+        mem.write(0x4015, 0x00);
     }
 
     fn run(&mut self) {
@@ -297,10 +297,11 @@ mod tests {
         let sp_before = cpu.stack_pointer;
         println!("{}", sp_before);
 
-        cpu.reset();
+        cpu.reset(&mut mem);
 
         assert_eq!(cpu.stack_pointer, sp_before-3);
         assert_eq!(cpu.status_register.interrupt_disable, true);
+        assert_eq!(mem.read(0x4015), 0);
         // TODO: test remaining memory addresses
     }
 }
