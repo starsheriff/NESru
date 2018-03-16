@@ -66,6 +66,28 @@ impl StatusRegister {
     }
 }
 
+
+// TODO: size?
+const MEM_SIZE: usize = 0x10000;
+
+struct Memory {
+    mem: [u8; MEM_SIZE],
+}
+
+impl Memory {
+    pub fn new() -> Memory {
+        Memory{mem: [0;MEM_SIZE]}
+    }
+
+    pub fn read(&self, addr: usize) -> u8 {
+        self.mem[addr]
+    }
+
+    pub fn write(&mut self, addr:usize, val: u8) {
+        self.mem[addr] = val
+    }
+}
+
 struct CPU {
     accumulator: u8,
     stack_pointer: u8,
@@ -87,7 +109,7 @@ impl CPU {
         }
     }
 
-    pub fn powerup(&mut self) {
+    pub fn powerup(&mut self, mem: &mut Memory) {
         self.status_register.set_all(0x34);
         self.accumulator = 0;
         self.index_x = 0;
@@ -98,6 +120,7 @@ impl CPU {
         // TODO:    $4017 = 0x00
         //          $4000-$400F = 0x00
         // LSFR = 0x00
+        mem.write(0x4017, 0x00);
     }
 
     pub fn reset(&mut self) {
@@ -240,8 +263,9 @@ mod tests {
     #[test]
     fn cpu_powerup_state() {
         let mut cpu = CPU::new();
+        let mut mem = Memory::new();
 
-        cpu.powerup();
+        cpu.powerup(&mut mem);
 
         assert_eq!(cpu.accumulator, 0);
         assert_eq!(cpu.index_x, 0);
@@ -258,12 +282,16 @@ mod tests {
         assert_eq!(cpu.status_register.decimal_mode, false);
         assert_eq!(cpu.status_register.overflow_flag, false);
         assert_eq!(cpu.status_register.negative_flag, false);
+
+        // memory
+        assert_eq!(mem.read(0x4017), 0);
     }
 
     #[test]
     fn cpu_reset_state() {
         let mut cpu = CPU::new();
-        cpu.powerup();
+        let mut mem = Memory::new();
+        cpu.powerup(&mut mem);
 
         cpu.status_register.interrupt_disable = false;
         let sp_before = cpu.stack_pointer;
