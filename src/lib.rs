@@ -1,4 +1,5 @@
 mod memory;
+
 use memory::Memory;
 
 use std::fmt::Display;
@@ -133,18 +134,33 @@ impl CPU {
         // TODO: check for interrupts
         //
 
+        self.execute_next(mem);
+    }
+
+    /// Executes the next instruction stored at the program_counters address.
+    fn execute_next(&mut self, mem: &mut Memory) {
+
         match self.program_counter {
+            // ADC
             0x69 => println!("got an opt code!"),
+            0x65 => self.adc(mem),
+            0x75 => {},
+            0x6D => {},
+            0x7D => {},
+            0x79 => {},
+            0x61 => {},
+            0x71 => {},
+
 
             _ => println!("not implemented"),
         }
     }
+
+    fn adc(&mut self, mem: &mut Memory) {
+        panic!("not implemented");
+    }
 }
 
-// impl block for instructions
-impl CPU {
-    fn adc(&mut self, mem: &mut Memory) {}
-}
 
 //impl Display for CPU {
 //fn fmt(&self) -> Result<(), std::fmt::Error> {
