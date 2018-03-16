@@ -137,10 +137,9 @@ impl CPU {
         self.stack_pointer = 0xFD;
 
         // Remaining tasks: set memory
-        // TODO:    $4017 = 0x00
-        //          $4000-$400F = 0x00
         // LSFR = 0x00
         mem.write(0x4017, 0x00);
+        mem.write_range(0x4000, 0x400F, 0x00);
     }
 
     pub fn reset(&mut self, mem: &mut Memory) {
