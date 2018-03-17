@@ -1,5 +1,3 @@
-mod memory;
-
 use memory::Memory;
 
 use std::fmt::Display;
@@ -71,7 +69,6 @@ impl StatusRegister {
     }
 }
 
-
 struct CPU {
     accumulator: u8,
     stack_pointer: u8,
@@ -135,25 +132,30 @@ impl CPU {
         //
 
         self.execute_next(mem);
+
     }
 
     /// Executes the next instruction stored at the program_counters address.
     fn execute_next(&mut self, mem: &mut Memory) {
-
         match self.program_counter {
             // ADC
             0x69 => println!("got an opt code!"),
             0x65 => self.adc(mem),
-            0x75 => {},
-            0x6D => {},
-            0x7D => {},
-            0x79 => {},
-            0x61 => {},
-            0x71 => {},
-
+            0x75 => {}
+            0x6D => {}
+            0x7D => {}
+            0x79 => {}
+            0x61 => {}
+            0x71 => {}
 
             _ => println!("not implemented"),
         }
+        // TODO: if a page is crossed, the cpy needs a cycle more. Account for
+        // that
+    }
+
+    fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo{
+        InstructionInfo{addressing_mode: 1, cycles: 16, addr: 16}
     }
 
     fn adc(&mut self, mem: &mut Memory) {
@@ -161,6 +163,11 @@ impl CPU {
     }
 }
 
+struct InstructionInfo {
+    addressing_mode: usize,
+    cycles : usize,
+    addr: u16,
+}
 
 //impl Display for CPU {
 //fn fmt(&self) -> Result<(), std::fmt::Error> {
@@ -352,7 +359,6 @@ mod tests {
         cpu.step(&mut mem);
         assert_eq!(cpu.elapsed_cycles, 3);
     }
-
 
     #[test]
     fn test_optcode_0x69() {
