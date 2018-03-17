@@ -119,6 +119,10 @@ impl CPU {
         mem.write(0x4015, 0x00);
     }
 
+    fn carry_flag(&self) -> u8 {
+        self.status_register.carry_flag as u8
+    }
+
     fn step(&mut self, mem: &mut Memory) {
         self.elapsed_cycles += 1;
 
@@ -132,15 +136,18 @@ impl CPU {
         //
 
         self.execute_next(mem);
-
     }
+
 
     /// Executes the next instruction stored at the program_counters address.
     fn execute_next(&mut self, mem: &mut Memory) {
         match self.program_counter {
             // ADC
-            0x69 => println!("got an opt code!"),
-            0x65 => self.adc(mem),
+            0x69 => {
+                let addr = self.get_address(AddressingMode::Immediate);
+                self.adc(mem, addr);
+            }
+            0x65 => self.adc(mem, 0xFFFF),
             0x75 => {}
             0x6D => {}
             0x7D => {}
@@ -152,20 +159,72 @@ impl CPU {
         }
         // TODO: if a page is crossed, the cpy needs a cycle more. Account for
         // that
+
+        // TODO: move program counter
     }
 
-    fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo{
-        InstructionInfo{addressing_mode: 1, cycles: 16, addr: 16}
+    fn get_address(&self, mode: AddressingMode) -> u16 {
+        match mode {
+            AddressingMode::Immediate => {
+                // in this addressing mode the constant is embedded directly in
+                // the programs assembler. Thus the value to read is at the next
+                // position in memory
+                self.program_counter + 1
+            }
+            _ => panic!("not implemented"),
+        }
     }
 
-    fn adc(&mut self, mem: &mut Memory) {
-        panic!("not implemented");
+    fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo {
+        InstructionInfo {
+            addressing_mode: AddressingMode::Immediate,
+            cycles: 16,
+            addr: 16,
+        }
+    }
+
+    fn adc(&mut self, mem: &mut Memory, addr: u16) {
+        let a = self.accumulator;
+        let m = mem.read(addr);
+        let c = self.carry_flag();
+
+        // this might overflow
+        self.accumulator = a + m + c;
+
+        if a as usize + m as usize + c as usize > 0xFF {
+            self.status_register.carry_flag = true;
+        } else {
+            self.status_register.carry_flag = false;
+        }
+
+        if a == 0 {
+            self.status_register.zero_flag = true;
+        }
+
+        // TODO: set negative flag
+        // TODO: set overflow flag
+
     }
 }
 
+enum AddressingMode {
+    Implicit,
+    Accumulator,
+    Immediate,
+    ZeroPage,
+    ZeroPageX,
+    ZeroPageY,
+    Relative,
+    Absolute,
+    AbsoluteX,
+    AbsoluteY,
+    IndexedIndirect,
+    IndirectIndexed,
+}
+
 struct InstructionInfo {
-    addressing_mode: usize,
-    cycles : usize,
+    addressing_mode: AddressingMode,
+    cycles: usize,
     addr: u16,
 }
 
