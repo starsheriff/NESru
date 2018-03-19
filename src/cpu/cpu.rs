@@ -103,11 +103,8 @@ impl CPU {
                 // position in memory
                 self.get_address_immediate()
             }
-            AddressingMode::ZeroPage => {
-                self.get_address_zero_page()
-            }
+            AddressingMode::ZeroPage => self.get_address_zero_page(),
             _ => panic!("not implemented"),
-
         }
     }
 
@@ -121,6 +118,25 @@ impl CPU {
     /// mode.
     fn get_address_zero_page(&self) -> (MemoryAddress, PageCrossed) {
         (self.program_counter + 1, false)
+    }
+
+    /// Returns the address for the next byte using the _zero page, x_
+    /// addressing mode.
+    ///
+    /// The address to be accessed by an instruction using indexed zero page
+    /// addressing is calculated by taking the 8 bit zero page address from
+    /// the instruction and adding the current value of the X register to it.
+    /// For example if the X register contains $0F and the instruction LDA $80,X
+    /// is executed then the accumulator will be loaded from $008F
+    /// (e.g. $80 + $0F => $8F).
+    ///
+    /// NB: The address calculation wraps around if the sum of the base address
+    /// and the register exceed $FF. If we repeat the last example but with $FF
+    /// in the X register then the accumulator will be loaded from $007F
+    /// (e.g. $80 + $FF => $7F) and not $017F.
+    fn get_address_zero_page_x(&self) -> (MemoryAddress, PageCrossed) {
+        //TODO: wrap around (bug)
+        (self.program_counter + 1 + self.index_x as u16, false)
     }
 
     /// Add with carry
