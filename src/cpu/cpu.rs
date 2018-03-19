@@ -142,7 +142,7 @@ impl CPU {
 
         // set bytes consumed
 
-        // TODO: set negative flag
+        self.update_negative_flag();
         // TODO: set overflow flag
         OpResponse {
             bytes_consumed: 2,
@@ -158,6 +158,7 @@ impl CPU {
         self.accumulator = a & m;
 
         self.update_zero_flag();
+        self.update_negative_flag();
 
         OpResponse {
             bytes_consumed: 2,
@@ -170,6 +171,15 @@ impl CPU {
     fn update_zero_flag(&mut self) {
         if self.accumulator == 0x00 {
             self.status_register.zero_flag = true;
+        }
+    }
+
+    fn update_negative_flag(&mut self) {
+        // TODO: implement
+        if self.accumulator >> 7 & 0x01 == 0x01 {
+            self.status_register.negative_flag = true;
+        } else {
+            self.status_register.negative_flag = false;
         }
     }
 }
@@ -273,6 +283,26 @@ mod tests {
         assert_eq!(cpu.cycles, 2);
         cpu.step(&mut mem);
         assert_eq!(cpu.cycles, 3);
+    }
+
+    #[test]
+    fn cpu_set_negative_true() {
+        let mut cpu = CPU::new();
+
+        cpu.accumulator = 0xFF;
+        assert_eq!(cpu.status_register.negative_flag, false);
+        cpu.update_negative_flag();
+        assert_eq!(cpu.status_register.negative_flag, true);
+    }
+
+    #[test]
+    fn cpu_set_negative_false() {
+        let mut cpu = CPU::new();
+
+        cpu.accumulator = 0x00;
+        assert_eq!(cpu.status_register.negative_flag, false);
+        cpu.update_negative_flag();
+        assert_eq!(cpu.status_register.negative_flag, false);
     }
 
     #[test]
