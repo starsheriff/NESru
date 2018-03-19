@@ -179,5 +179,4 @@ mod tests {
         sr.interrupt_disable = true;
         assert_eq!(sr.to_u8(), 4 + 1);
     }
-
 }
