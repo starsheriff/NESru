@@ -174,6 +174,12 @@ impl CPU {
         }
     }
 
+    /// Returns a tuple containing the address and the amount of cycles the
+    /// 6502 cpu would have spent.
+    fn get_address_immediate(&self) -> (u16, usize) {
+        (self.program_counter + 1, 2)
+    }
+
     fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo {
         InstructionInfo {
             addressing_mode: AddressingMode::Immediate,
