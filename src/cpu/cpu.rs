@@ -1,9 +1,9 @@
 use cpu::status_register::StatusRegister;
 
 use memory::Memory;
-
 use std::fmt::Display;
 
+type MemoryAddress = u16;
 
 struct CPU {
     accumulator: u8,
@@ -74,10 +74,9 @@ impl CPU {
         self.execute_next(mem);
     }
 
-
     /// Executes the next instruction stored at the program_counters address.
     fn execute_next(&mut self, mem: &mut Memory) {
-        let (bytes_consumed, cycles_spent) = match self.program_counter {
+        let op_response = match self.program_counter {
             // ADC
             0x69 => self.adc(mem, AddressingMode::Immediate),
             0x65 => self.adc(mem, AddressingMode::ZeroPage),
@@ -87,17 +86,15 @@ impl CPU {
             0x79 => self.adc(mem, AddressingMode::AbsoluteY),
             0x61 => self.adc(mem, AddressingMode::IndexedIndirect),
             0x71 => self.adc(mem, AddressingMode::IndirectIndexed),
-            
-            // TODO: more remaining optcodes
 
+            // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
 
-        self.cycles += cycles_spent;
-
+        self.cycles += op_response.cycles_spent;
     }
 
-    fn get_address(&self, mode: AddressingMode) -> u16 {
+    fn get_address(&self, mode: AddressingMode) -> MemoryAddress {
         match mode {
             AddressingMode::Immediate => {
                 // in this addressing mode the constant is embedded directly in
@@ -111,21 +108,21 @@ impl CPU {
 
     /// Returns a tuple containing the address and the amount of cycles the
     /// 6502 cpu would have spent.
-    fn get_address_immediate(&self) -> (u16, usize) {
+    fn get_address_immediate(&self) -> (MemoryAddress, usize) {
         (self.program_counter + 1, 2)
     }
 
     //fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo {
-        //InstructionInfo {
-            //addressing_mode: AddressingMode::Immediate,
-            //cycles: 16,
-            //addr: 16,
-        //}
+    //InstructionInfo {
+    //addressing_mode: AddressingMode::Immediate,
+    //cycles: 16,
+    //addr: 16,
+    //}
     //}
 
     /// TODO: types for bytes and cycles for static typing benefits/safety
-    fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) -> (usize, usize){
-        let addr = self.get_address(AddressingMode::Immediate);
+    fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+        let addr = self.get_address(mode);
 
         let a = self.accumulator;
         let m = mem.read(addr);
@@ -144,10 +141,31 @@ impl CPU {
             self.status_register.zero_flag = true;
         }
 
+        // set bytes consumed
+
         // TODO: set negative flag
         // TODO: set overflow flag
-        (2, 2)
+        OpResponse {
+            bytes_consumed: 2,
+            cycles_spent: 2,
+        }
     }
+
+    fn and(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+        let addr = self.get_address(mode);
+        let a = self.accumulator;
+        let m = mem.read(addr);
+
+        OpResponse {
+            bytes_consumed: 2,
+            cycles_spent: 2,
+        }
+    }
+}
+
+struct OpResponse {
+    bytes_consumed: usize,
+    cycles_spent: usize,
 }
 
 enum AddressingMode {
