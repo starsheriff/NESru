@@ -78,7 +78,7 @@ struct CPU {
     status_register: StatusRegister,
 
     /// count the total amount of cycles spent
-    elapsed_cycles: u64,
+    cycles: usize,
     /// delay the cpu for a specific amount of cycles
     delay_cycles: u8,
 }
@@ -94,7 +94,7 @@ impl CPU {
             status_register: StatusRegister::new(),
 
             delay_cycles: 0,
-            elapsed_cycles: 0,
+            cycles: 0,
         }
     }
 
@@ -124,7 +124,7 @@ impl CPU {
     }
 
     fn step(&mut self, mem: &mut Memory) {
-        self.elapsed_cycles += 1;
+        self.cycles += 1;
 
         // delay cycles has higher priority than interrupts
         if (self.delay_cycles > 0) {
@@ -141,7 +141,7 @@ impl CPU {
 
     /// Executes the next instruction stored at the program_counters address.
     fn execute_next(&mut self, mem: &mut Memory) {
-        match self.program_counter {
+        let (bytes_consumed, cycles_spent) = match self.program_counter {
             // ADC
             0x69 => self.adc(mem, AddressingMode::Immediate),
             0x65 => self.adc(mem, AddressingMode::ZeroPage),
@@ -154,12 +154,11 @@ impl CPU {
             
             // TODO: more remaining optcodes
 
-            _ => println!("not implemented"),
-        }
-        // TODO: if a page is crossed, the cpy needs a cycle more. Account for
-        // that
+            _ => panic!("not implemented"),
+        };
 
-        // TODO: move program counter
+        self.cycles += cycles_spent;
+
     }
 
     fn get_address(&self, mode: AddressingMode) -> u16 {
@@ -180,15 +179,16 @@ impl CPU {
         (self.program_counter + 1, 2)
     }
 
-    fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo {
-        InstructionInfo {
-            addressing_mode: AddressingMode::Immediate,
-            cycles: 16,
-            addr: 16,
-        }
-    }
+    //fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo {
+        //InstructionInfo {
+            //addressing_mode: AddressingMode::Immediate,
+            //cycles: 16,
+            //addr: 16,
+        //}
+    //}
 
-    fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) {
+    /// TODO: types for bytes and cycles for static typing benefits/safety
+    fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) -> (usize, usize){
         let addr = self.get_address(AddressingMode::Immediate);
 
         let a = self.accumulator;
@@ -210,7 +210,7 @@ impl CPU {
 
         // TODO: set negative flag
         // TODO: set overflow flag
-
+        (2, 2)
     }
 }
 
@@ -419,11 +419,11 @@ mod tests {
 
         cpu.delay_cycles = 3;
         cpu.step(&mut mem);
-        assert_eq!(cpu.elapsed_cycles, 1);
+        assert_eq!(cpu.cycles, 1);
         cpu.step(&mut mem);
-        assert_eq!(cpu.elapsed_cycles, 2);
+        assert_eq!(cpu.cycles, 2);
         cpu.step(&mut mem);
-        assert_eq!(cpu.elapsed_cycles, 3);
+        assert_eq!(cpu.cycles, 3);
     }
 
     #[test]
