@@ -113,15 +113,16 @@ impl CPU {
         (self.program_counter + 1, false)
     }
 
-    //fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo {
-    //InstructionInfo {
-    //addressing_mode: AddressingMode::Immediate,
-    //cycles: 16,
-    //addr: 16,
-    //}
-    //}
-
-    /// TODO: types for bytes and cycles for static typing benefits/safety
+    /// Add with carry
+    ///
+    /// This instruction adds the contents of a memory location to the
+    /// accumulator together with the carry bit. If overflow occurs the carry
+    /// bit is set, this enables multiple byte addition to be performed.
+    ///
+    /// Affected Registers:
+    /// - zero flag: set if accumulator is zero
+    /// - negative flag: set if bit 7 (highest bit) is set
+    /// - overflow flag: set if sign bit is incorrect
     fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
         let (addr, page_crossed) = self.get_address(mode);
 
