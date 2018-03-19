@@ -4,6 +4,7 @@ use memory::Memory;
 use std::fmt::Display;
 
 type MemoryAddress = u16;
+type PageCrossed = bool;
 
 struct CPU {
     accumulator: u8,
@@ -94,13 +95,13 @@ impl CPU {
         self.cycles += op_response.cycles_spent;
     }
 
-    fn get_address(&self, mode: AddressingMode) -> MemoryAddress {
+    fn get_address(&self, mode: AddressingMode) -> (MemoryAddress, PageCrossed) {
         match mode {
             AddressingMode::Immediate => {
                 // in this addressing mode the constant is embedded directly in
                 // the programs assembler. Thus the value to read is at the next
                 // position in memory
-                self.program_counter + 1
+                (self.program_counter + 1, false)
             }
             _ => panic!("not implemented"),
         }
@@ -108,8 +109,8 @@ impl CPU {
 
     /// Returns a tuple containing the address and the amount of cycles the
     /// 6502 cpu would have spent.
-    fn get_address_immediate(&self) -> (MemoryAddress, usize) {
-        (self.program_counter + 1, 2)
+    fn get_address_immediate(&self) -> (MemoryAddress, PageCrossed) {
+        (self.program_counter + 1, false)
     }
 
     //fn get_instruction_info(&self, mem: &Memory) -> InstructionInfo {
@@ -122,7 +123,7 @@ impl CPU {
 
     /// TODO: types for bytes and cycles for static typing benefits/safety
     fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        let addr = self.get_address(mode);
+        let (addr, page_crossed) = self.get_address(mode);
 
         let a = self.accumulator;
         let m = mem.read(addr);
@@ -152,7 +153,7 @@ impl CPU {
     }
 
     fn and(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        let addr = self.get_address(mode);
+        let (addr, page_crossed) = self.get_address(mode);
         let a = self.accumulator;
         let m = mem.read(addr);
 
