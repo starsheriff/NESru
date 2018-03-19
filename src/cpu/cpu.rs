@@ -138,9 +138,7 @@ impl CPU {
             self.status_register.carry_flag = false;
         }
 
-        if a == 0 {
-            self.status_register.zero_flag = true;
-        }
+        self.update_zero_flag();
 
         // set bytes consumed
 
@@ -157,9 +155,21 @@ impl CPU {
         let a = self.accumulator;
         let m = mem.read(addr);
 
+        self.accumulator = a & m;
+
+        self.update_zero_flag();
+
         OpResponse {
             bytes_consumed: 2,
             cycles_spent: 2,
+        }
+    }
+
+    /// Update the zero flag of the cpus status register. This is a common call
+    /// in many instructions.
+    fn update_zero_flag(&mut self) {
+        if self.accumulator == 0x00 {
+            self.status_register.zero_flag = true;
         }
     }
 }
