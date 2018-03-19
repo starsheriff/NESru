@@ -101,15 +101,25 @@ impl CPU {
                 // in this addressing mode the constant is embedded directly in
                 // the programs assembler. Thus the value to read is at the next
                 // position in memory
-                (self.program_counter + 1, false)
+                self.get_address_immediate()
+            }
+            AddressingMode::ZeroPage => {
+                self.get_address_zero_page()
             }
             _ => panic!("not implemented"),
+
         }
     }
 
     /// Returns a tuple containing the address and the amount of cycles the
     /// 6502 cpu would have spent.
     fn get_address_immediate(&self) -> (MemoryAddress, PageCrossed) {
+        (self.program_counter + 1, false)
+    }
+
+    /// Returns the address for the next byte using the _zero page_ addressing
+    /// mode.
+    fn get_address_zero_page(&self) -> (MemoryAddress, PageCrossed) {
         (self.program_counter + 1, false)
     }
 
