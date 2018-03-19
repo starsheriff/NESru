@@ -143,17 +143,16 @@ impl CPU {
     fn execute_next(&mut self, mem: &mut Memory) {
         match self.program_counter {
             // ADC
-            0x69 => {
-                let addr = self.get_address(AddressingMode::Immediate);
-                self.adc(mem, addr);
-            }
-            0x65 => self.adc(mem, 0xFFFF),
-            0x75 => {}
-            0x6D => {}
-            0x7D => {}
-            0x79 => {}
-            0x61 => {}
-            0x71 => {}
+            0x69 => self.adc(mem, AddressingMode::Immediate),
+            0x65 => self.adc(mem, AddressingMode::ZeroPage),
+            0x75 => self.adc(mem, AddressingMode::ZeroPageX),
+            0x6D => self.adc(mem, AddressingMode::Absolute),
+            0x7D => self.adc(mem, AddressingMode::AbsoluteX),
+            0x79 => self.adc(mem, AddressingMode::AbsoluteY),
+            0x61 => self.adc(mem, AddressingMode::IndexedIndirect),
+            0x71 => self.adc(mem, AddressingMode::IndirectIndexed),
+            
+            // TODO: more remaining optcodes
 
             _ => println!("not implemented"),
         }
@@ -183,7 +182,9 @@ impl CPU {
         }
     }
 
-    fn adc(&mut self, mem: &mut Memory, addr: u16) {
+    fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) {
+        let addr = self.get_address(AddressingMode::Immediate);
+
         let a = self.accumulator;
         let m = mem.read(addr);
         let c = self.carry_flag();
