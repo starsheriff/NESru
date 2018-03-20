@@ -88,6 +88,29 @@ impl CPU {
             0x61 => self.adc(mem, AddressingMode::IndexedIndirect),
             0x71 => self.adc(mem, AddressingMode::IndirectIndexed),
 
+            // AND
+            0x29 => self.and(mem, AddressingMode::Immediate),
+            0x25 => self.and(mem, AddressingMode::ZeroPage),
+            0x35 => self.and(mem, AddressingMode::ZeroPageX),
+            0x2D => self.and(mem, AddressingMode::ZeroPageY),
+            0x3D => self.and(mem, AddressingMode::AbsoluteX),
+            0x39 => self.and(mem, AddressingMode::AbsoluteY),
+            0x21 => self.and(mem, AddressingMode::IndexedIndirect),
+            0x31 => self.and(mem, AddressingMode::IndirectIndexed),
+
+            // ASL
+            0x0A => self.asl(mem, AddressingMode::Accumulator),
+            0x06 => self.asl(mem, AddressingMode::ZeroPage),
+            0x16 => self.asl(mem, AddressingMode::ZeroPageX),
+            0x0E => self.asl(mem, AddressingMode::Absolute),
+            0x1E => self.asl(mem, AddressingMode::AbsoluteX),
+
+            // BCC
+            0x90 => self.bcc(mem, AddressingMode::Relative),
+
+            // BCS
+            0xB0 => self.bcs(mem, AddressingMode::Relative),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -142,7 +165,7 @@ impl CPU {
     /// (e.g. $80 + $FF => $7F) and not $017F.
     fn get_address_zero_page_x(&self, mem: &Memory) -> (u8, PageCrossed) {
         //TODO: wrap around (bug)
-        let a: u8 = mem.read(self.program_counter +1);
+        let a: u8 = mem.read(self.program_counter + 1);
         let b: u8 = self.index_x;
         let addr: u8 = a + b;
         let val: u8 = mem.read(addr as MemoryAddress);
@@ -180,6 +203,7 @@ impl CPU {
 
         self.update_negative_flag();
         // TODO: set overflow flag
+        // TODO: fix return value
         OpResponse {
             bytes_consumed: 2,
             cycles_spent: 2,
@@ -199,11 +223,28 @@ impl CPU {
         self.update_zero_flag();
         self.update_negative_flag();
 
+        // TODO: fix return value
         OpResponse {
             bytes_consumed: 2,
             cycles_spent: 2,
         }
     }
+
+    fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bcc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bcs(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
 
     /// Update the zero flag of the cpus status register. This is a common call
     /// in many instructions.
