@@ -60,6 +60,23 @@ impl CPU {
         self.status_register.carry_flag as u8
     }
 
+    /// Update the zero flag of the cpus status register. This is a common call
+    /// in many instructions.
+    fn update_zero_flag(&mut self) {
+        if self.accumulator == 0x00 {
+            self.status_register.zero_flag = true;
+        }
+    }
+
+    fn update_negative_flag(&mut self) {
+        // TODO: implement
+        if self.accumulator >> 7 & 0x01 == 0x01 {
+            self.status_register.negative_flag = true;
+        } else {
+            self.status_register.negative_flag = false;
+        }
+    }
+
     fn step(&mut self, mem: &mut Memory) {
         self.cycles += 1;
 
@@ -110,6 +127,10 @@ impl CPU {
 
             // BCS
             0xB0 => self.bcs(mem, AddressingMode::Relative),
+
+            // BIT (Bit Test)
+            0x24 => self.bit(mem, AddressingMode::ZeroPage),
+            0x2C => self.bit(mem, AddressingMode::Absolute),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -245,23 +266,11 @@ impl CPU {
         panic!("not implemented");
     }
 
-
-    /// Update the zero flag of the cpus status register. This is a common call
-    /// in many instructions.
-    fn update_zero_flag(&mut self) {
-        if self.accumulator == 0x00 {
-            self.status_register.zero_flag = true;
-        }
+    fn bit(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+        // TODO
+        panic!("not implemented");
     }
 
-    fn update_negative_flag(&mut self) {
-        // TODO: implement
-        if self.accumulator >> 7 & 0x01 == 0x01 {
-            self.status_register.negative_flag = true;
-        } else {
-            self.status_register.negative_flag = false;
-        }
-    }
 }
 
 struct OpResponse {
