@@ -212,16 +212,16 @@ impl CPU {
         // this might overflow
         self.accumulator = a + m + c;
 
+        // set carry flag
         if a as usize + m as usize + c as usize > 0xFF {
             self.status_register.carry_flag = true;
         } else {
             self.status_register.carry_flag = false;
         }
 
+        // TODO: set overflow
+
         self.update_zero_flag();
-
-        // set bytes consumed
-
         self.update_negative_flag();
         // TODO: set overflow flag
         // TODO: fix return value
@@ -270,7 +270,6 @@ impl CPU {
         // TODO
         panic!("not implemented");
     }
-
 }
 
 struct OpResponse {
