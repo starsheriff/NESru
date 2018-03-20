@@ -95,32 +95,38 @@ impl CPU {
         self.cycles += op_response.cycles_spent;
     }
 
-    fn get_address(&self, mode: AddressingMode) -> (MemoryAddress, PageCrossed) {
+    fn read_mem(&self, mode: AddressingMode, mem: &Memory) -> (u8, PageCrossed) {
         match mode {
             AddressingMode::Immediate => {
                 // in this addressing mode the constant is embedded directly in
                 // the programs assembler. Thus the value to read is at the next
                 // position in memory
-                self.get_address_immediate()
+                self.read_mem_immediate(mem)
             }
-            AddressingMode::ZeroPage => self.get_address_zero_page(),
+            AddressingMode::ZeroPage => self.read_mem_zero_page(mem),
             _ => panic!("not implemented"),
         }
     }
 
     /// Returns a tuple containing the address and the amount of cycles the
     /// 6502 cpu would have spent.
-    fn get_address_immediate(&self) -> (MemoryAddress, PageCrossed) {
-        (self.program_counter + 1, false)
+    ///
+    /// Immediate addressing allows the programmer to directly specify an 8 bit
+    /// constant within the instruction. It is indicated by a '#' symbol
+    /// followed by an numeric expression.
+    fn read_mem_immediate(&self, mem: &Memory) -> (u8, PageCrossed) {
+        (mem.read(self.program_counter + 1), false)
     }
 
     /// Returns the address for the next byte using the _zero page_ addressing
     /// mode.
-    fn get_address_zero_page(&self) -> (MemoryAddress, PageCrossed) {
-        (self.program_counter + 1, false)
+    fn read_mem_zero_page(&self, mem: &Memory) -> (u8, PageCrossed) {
+        let addr: MemoryAddress = mem.read(self.program_counter + 1) as u16;
+        let val: u8 = mem.read(addr);
+        (val, false)
     }
 
-    /// Returns the address for the next byte using the _zero page, x_
+    /// Returns the addressj for the next byte using the _zero page, x_
     /// addressing mode.
     ///
     /// The address to be accessed by an instruction using indexed zero page
@@ -134,9 +140,13 @@ impl CPU {
     /// and the register exceed $FF. If we repeat the last example but with $FF
     /// in the X register then the accumulator will be loaded from $007F
     /// (e.g. $80 + $FF => $7F) and not $017F.
-    fn get_address_zero_page_x(&self) -> (MemoryAddress, PageCrossed) {
+    fn get_address_zero_page_x(&self, mem: &Memory) -> (u8, PageCrossed) {
         //TODO: wrap around (bug)
-        (self.program_counter + 1 + self.index_x as u16, false)
+        let a: u8 = mem.read(self.program_counter +1);
+        let b: u8 = self.index_x;
+        let addr: u8 = a + b;
+        let val: u8 = mem.read(addr as MemoryAddress);
+        (val, false)
     }
 
     /// Add with carry
@@ -150,10 +160,9 @@ impl CPU {
     /// - negative flag: set if bit 7 (highest bit) is set
     /// - overflow flag: set if sign bit is incorrect
     fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        let (addr, page_crossed) = self.get_address(mode);
+        let (m, page_crossed) = self.read_mem(mode, mem);
 
         let a = self.accumulator;
-        let m = mem.read(addr);
         let c = self.carry_flag();
 
         // this might overflow
@@ -178,9 +187,8 @@ impl CPU {
     }
 
     fn and(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        let (addr, page_crossed) = self.get_address(mode);
+        let (m, page_crossed) = self.read_mem(mode, mem);
         let a = self.accumulator;
-        let m = mem.read(addr);
 
         self.accumulator = a & m;
 
