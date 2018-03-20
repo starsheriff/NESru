@@ -149,7 +149,7 @@ impl CPU {
         (val, false)
     }
 
-    /// Add with carry
+    /// CPU instruction: ADC (add with carry)
     ///
     /// This instruction adds the contents of a memory location to the
     /// accumulator together with the carry bit. If overflow occurs the carry
@@ -186,6 +186,10 @@ impl CPU {
         }
     }
 
+    /// CPU instruction: AND (logical AND)
+    ///
+    /// A logical AND is performed, bit by bit, on the accumulator contents
+    /// using the contents of a byte of memory.
     fn and(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
         let (m, page_crossed) = self.read_mem(mode, mem);
         let a = self.accumulator;
