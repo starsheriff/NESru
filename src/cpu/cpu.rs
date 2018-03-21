@@ -1,4 +1,5 @@
 use cpu::status_register::StatusRegister;
+use cpu::utils;
 
 use memory::Memory;
 use std::fmt::Display;
@@ -219,11 +220,11 @@ impl CPU {
             self.status_register.carry_flag = false;
         }
 
-        // TODO: set overflow
+        self.status_register.overflow_flag = utils::calculate_overflow_bit(a, m, self.accumulator);
 
         self.update_zero_flag();
         self.update_negative_flag();
-        // TODO: set overflow flag
+
         // TODO: fix return value
         OpResponse {
             bytes_consumed: 2,
@@ -253,7 +254,20 @@ impl CPU {
 
     fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
         // TODO
-        panic!("not implemented");
+        let (m, page_crossed) = self.read_mem(mode, mem);
+
+        let (a, c) = m.overflowing_shl(1);
+        self.accumulator = a;
+        self.status_register.carry_flag = c;
+
+        self.update_zero_flag();
+        self.update_negative_flag();
+
+        // TODO: fix return value
+        OpResponse {
+            bytes_consumed: 2,
+            cycles_spent: 2,
+        }
     }
 
     fn bcc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
