@@ -253,12 +253,23 @@ impl CPU {
     }
 
     fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        // TODO
-        let (m, page_crossed) = self.read_mem(mode, mem);
+        let mut page_crossed = false;
 
-        let (a, c) = m.overflowing_shl(1);
-        self.accumulator = a;
-        self.status_register.carry_flag = c;
+        match mode {
+            accumulator => {
+                let (v, c) = self.accumulator.overflowing_shl(1);
+                self.accumulator = v;
+                self.status_register.carry_flag = c;
+            }
+            _ => {
+                let (m, o) = self.read_mem(mode, mem);
+                let (v, c) = m.overflowing_shl(1);
+                self.status_register.carry_flag = c;
+                //self.write_mem(val);
+
+                page_crossed = o;
+            }
+        }
 
         self.update_zero_flag();
         self.update_negative_flag();
