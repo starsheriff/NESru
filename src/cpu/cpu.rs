@@ -1,13 +1,13 @@
 use cpu::status_register::StatusRegister;
 use cpu::utils;
+use cpu::opinfo::{OpInfo, OP_INFO};
 
 use memory::Memory;
-use std::fmt::Display;
 
 type MemoryAddress = u16;
 type PageCrossed = bool;
 
-struct CPU {
+pub struct CPU {
     accumulator: u8,
     stack_pointer: u8,
     program_counter: u16,
@@ -94,7 +94,10 @@ impl CPU {
     }
 
     /// Executes the next instruction stored at the program_counters address.
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn execute_next(&mut self, mem: &mut Memory) {
+        use cpu::cpu::AddressingMode::*;
+
         let op_response = match self.program_counter {
             // ADC
             0x69 => self.adc(mem, AddressingMode::Immediate),
@@ -124,12 +127,15 @@ impl CPU {
             0x1E => self.asl(mem, AddressingMode::AbsoluteX),
 
             // BCC
-            0x90 => self.bcc(mem, AddressingMode::Relative),
+            0x90 => self.bcc(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
 
             // BCS
-            0xB0 => self.bcs(mem, AddressingMode::Relative),
+            0xB0 => self.bcs(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
 
-            // BIT (Bit Test)
+            // BEQ (branch if equal)
+            0xF0 => self.beq(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
+
+            // BIT (bit test)
             0x24 => self.bit(mem, AddressingMode::ZeroPage),
             0x2C => self.bit(mem, AddressingMode::Absolute),
 
@@ -281,12 +287,18 @@ impl CPU {
         }
     }
 
-    fn bcc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+    pub fn bcc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        //fn bcc(&mut self, mem: &mut Memory, mode: AddressingMode, bytes: usize, cycles: usize) -> OpResponse {
         // TODO
         panic!("not implemented");
     }
 
-    fn bcs(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+    fn bcs(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn beq(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
         // TODO
         panic!("not implemented");
     }
@@ -297,12 +309,12 @@ impl CPU {
     }
 }
 
-struct OpResponse {
+pub struct OpResponse {
     bytes_consumed: usize,
     cycles_spent: usize,
 }
 
-enum AddressingMode {
+pub enum AddressingMode {
     Implicit,
     Accumulator,
     Immediate,
@@ -315,12 +327,6 @@ enum AddressingMode {
     AbsoluteY,
     IndexedIndirect,
     IndirectIndexed,
-}
-
-struct InstructionInfo {
-    addressing_mode: AddressingMode,
-    cycles: usize,
-    addr: u16,
 }
 
 //impl Display for CPU {
