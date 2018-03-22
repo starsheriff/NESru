@@ -146,6 +146,29 @@ impl CPU {
         self.cycles += op_response.cycles_spent;
     }
 
+    /// Get the memory address stored at (actually behind) the current program
+    /// counter.
+    ///
+    /// This method will increment the cpu cycles spent if it detects a page
+    /// crossing.
+    ///
+    /// 1. All instructions have only one argument, so there is only one memory
+    ///    address to read per instruction.
+    /// 2. Depending on the addressing mode, either one or two bytes have to be
+    ///    read from memory.
+    fn get_address(&self, mem: &Memory, mode: AddressingMode) -> (u16, PageCrossed) {
+        //TODO
+        match mode {
+            Implicit => panic!("not implemented"),
+            Immediate => (self.program_counter + 1, false),
+            _ => panic!("not implemented"),
+        }
+    }
+
+    fn read(&self, mem: &Memory, addr: u16) -> u8 {
+        mem.read(addr)
+    }
+
     fn read_mem(&self, mode: AddressingMode, mem: &Memory) -> (u8, PageCrossed) {
         match mode {
             AddressingMode::Immediate => {
@@ -211,7 +234,8 @@ impl CPU {
     /// - negative flag: set if bit 7 (highest bit) is set
     /// - overflow flag: set if sign bit is incorrect
     fn adc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        let (m, page_crossed) = self.read_mem(opi.mode, mem);
+        let (addr, page_crossed) = self.get_address(mem, opi.mode);
+        let m = self.read(mem, addr);
 
         let a = self.accumulator;
         let c = self.carry_flag();
@@ -233,8 +257,8 @@ impl CPU {
 
         // TODO: fix return value
         OpResponse {
-            bytes_consumed: 2,
-            cycles_spent: 2,
+            bytes_consumed: opi.bytes,
+            cycles_spent: opi.cycles,
         }
     }
 
