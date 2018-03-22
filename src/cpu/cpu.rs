@@ -156,48 +156,20 @@ impl CPU {
     ///    address to read per instruction.
     /// 2. Depending on the addressing mode, either one or two bytes have to be
     ///    read from memory.
-    fn get_address(&self, mem: &Memory, mode: AddressingMode) -> (u16, PageCrossed) {
+    fn get_address(&self, mem: &Memory, mode: AddressingMode) -> Option<u16> {
         //TODO
+        use cpu::cpu::AddressingMode::*;
+
         match mode {
-            Implicit => panic!("not implemented"),
-            Immediate => (self.program_counter + 1, false),
+            Accumulator => None,
+            Implicit => panic!("Implicit is not implemented"),
+            Immediate => Some(self.program_counter + 1),
             _ => panic!("not implemented"),
         }
     }
 
     fn read(&self, mem: &Memory, addr: u16) -> u8 {
         mem.read(addr)
-    }
-
-    fn read_mem(&self, mode: AddressingMode, mem: &Memory) -> (u8, PageCrossed) {
-        match mode {
-            AddressingMode::Immediate => {
-                // in this addressing mode the constant is embedded directly in
-                // the programs assembler. Thus the value to read is at the next
-                // position in memory
-                self.read_mem_immediate(mem)
-            }
-            AddressingMode::ZeroPage => self.read_mem_zero_page(mem),
-            _ => panic!("not implemented"),
-        }
-    }
-
-    /// Returns a tuple containing the address and the amount of cycles the
-    /// 6502 cpu would have spent.
-    ///
-    /// Immediate addressing allows the programmer to directly specify an 8 bit
-    /// constant within the instruction. It is indicated by a '#' symbol
-    /// followed by an numeric expression.
-    fn read_mem_immediate(&self, mem: &Memory) -> (u8, PageCrossed) {
-        (mem.read(self.program_counter + 1), false)
-    }
-
-    /// Returns the address for the next byte using the _zero page_ addressing
-    /// mode.
-    fn read_mem_zero_page(&self, mem: &Memory) -> (u8, PageCrossed) {
-        let addr: MemoryAddress = mem.read(self.program_counter + 1) as u16;
-        let val: u8 = mem.read(addr);
-        (val, false)
     }
 
     /// Returns the addressj for the next byte using the _zero page, x_
@@ -234,7 +206,7 @@ impl CPU {
     /// - negative flag: set if bit 7 (highest bit) is set
     /// - overflow flag: set if sign bit is incorrect
     fn adc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        let (addr, page_crossed) = self.get_address(mem, opi.mode);
+        let addr = self.get_address(mem, opi.mode).unwrap();
         let m = self.read(mem, addr);
 
         let a = self.accumulator;
@@ -267,7 +239,8 @@ impl CPU {
     /// A logical AND is performed, bit by bit, on the accumulator contents
     /// using the contents of a byte of memory.
     fn and(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        let (m, page_crossed) = self.read_mem(mode, mem);
+        let addr = self.get_address(mem, mode).unwrap();
+        let m = self.read(mem, addr);
         let a = self.accumulator;
 
         self.accumulator = a & m;
@@ -283,8 +256,6 @@ impl CPU {
     }
 
     fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        let mut page_crossed = false;
-
         match mode {
             accumulator => {
                 let (v, c) = self.accumulator.overflowing_shl(1);
@@ -292,12 +263,11 @@ impl CPU {
                 self.status_register.carry_flag = c;
             }
             _ => {
-                let (m, o) = self.read_mem(mode, mem);
+                let addr = self.get_address(mem, mode).unwrap();
+                let m = self.read(mem, addr);
                 let (v, c) = m.overflowing_shl(1);
                 self.status_register.carry_flag = c;
                 //self.write_mem(val);
-
-                page_crossed = o;
             }
         }
 
@@ -312,7 +282,6 @@ impl CPU {
     }
 
     pub fn bcc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        //fn bcc(&mut self, mem: &mut Memory, mode: AddressingMode, bytes: usize, cycles: usize) -> OpResponse {
         // TODO
         panic!("not implemented");
     }
@@ -338,7 +307,7 @@ pub struct OpResponse {
     cycles_spent: usize,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum AddressingMode {
     Implicit,
     Accumulator,

@@ -4,6 +4,7 @@ use cpu::cpu::AddressingMode::*;
 /// Information required to correctly execute an instruction. The cycles
 /// _shall _ be  stored without conditional cycles such as extra cycles caused
 /// by page crossings.
+#[derive(Debug)]
 pub struct OpInfo {
     pub mode: AddressingMode,
     pub cycles: usize,
