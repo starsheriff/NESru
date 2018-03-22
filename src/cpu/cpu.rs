@@ -100,14 +100,14 @@ impl CPU {
 
         let op_response = match self.program_counter {
             // ADC
-            0x69 => self.adc(mem, AddressingMode::Immediate),
-            0x65 => self.adc(mem, AddressingMode::ZeroPage),
-            0x75 => self.adc(mem, AddressingMode::ZeroPageX),
-            0x6D => self.adc(mem, AddressingMode::Absolute),
-            0x7D => self.adc(mem, AddressingMode::AbsoluteX),
-            0x79 => self.adc(mem, AddressingMode::AbsoluteY),
-            0x61 => self.adc(mem, AddressingMode::IndexedIndirect),
-            0x71 => self.adc(mem, AddressingMode::IndirectIndexed),
+            0x69 => self.adc(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0x65 => self.adc(mem, &OpInfo{mode: ZeroPage,  bytes: 2, cycles: 3}),
+            0x75 => self.adc(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
+            0x6D => self.adc(mem, &OpInfo{mode: Absolute,  bytes: 3, cycles: 4}),
+            0x7D => self.adc(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 4}),
+            0x79 => self.adc(mem, &OpInfo{mode: AbsoluteY, bytes: 3, cycles: 4}),
+            0x61 => self.adc(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
+            0x71 => self.adc(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
 
             // AND
             0x29 => self.and(mem, AddressingMode::Immediate),
@@ -210,8 +210,8 @@ impl CPU {
     /// - zero flag: set if accumulator is zero
     /// - negative flag: set if bit 7 (highest bit) is set
     /// - overflow flag: set if sign bit is incorrect
-    fn adc(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
-        let (m, page_crossed) = self.read_mem(mode, mem);
+    fn adc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        let (m, page_crossed) = self.read_mem(opi.mode, mem);
 
         let a = self.accumulator;
         let c = self.carry_flag();
@@ -314,6 +314,7 @@ pub struct OpResponse {
     cycles_spent: usize,
 }
 
+#[derive(Copy, Clone)]
 pub enum AddressingMode {
     Implicit,
     Accumulator,
@@ -431,6 +432,17 @@ mod tests {
 
         cpu.powerup(&mut mem);
         cpu.program_counter = 0x69;
+        cpu.step(&mut mem);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_optcode_0x90() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+        cpu.program_counter = 0x90;
         cpu.step(&mut mem);
     }
 }
