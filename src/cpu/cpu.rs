@@ -164,6 +164,17 @@ impl CPU {
             Accumulator => None,
             Implicit => panic!("Implicit is not implemented"),
             Immediate => Some(self.program_counter + 1),
+            ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
+            ZeroPageX => {
+                let a = self.read(mem, self.program_counter + 1);
+                let b = a.wrapping_add(self.index_x);
+                Some(b as u16)
+            },
+            ZeroPageY => {
+                let a = self.read(mem, self.program_counter + 1);
+                let b = a.wrapping_add(self.index_y);
+                Some(b as u16)
+            },
             _ => panic!("not implemented"),
         }
     }
