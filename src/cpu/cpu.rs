@@ -161,6 +161,12 @@ impl CPU {
         use cpu::cpu::AddressingMode::*;
 
         match mode {
+            Absolute => {
+                let a = self.read(mem, self.program_counter + 1) as u16;
+                let b = self.read(mem, self.program_counter + 2) as u16;
+
+                Some((b << 8) + a)
+            }
             Accumulator => None,
             Implicit => panic!("Implicit is not implemented"),
             Immediate => Some(self.program_counter + 1),
@@ -169,12 +175,12 @@ impl CPU {
                 let a = self.read(mem, self.program_counter + 1);
                 let b = a.wrapping_add(self.index_x);
                 Some(b as u16)
-            },
+            }
             ZeroPageY => {
                 let a = self.read(mem, self.program_counter + 1);
                 let b = a.wrapping_add(self.index_y);
                 Some(b as u16)
-            },
+            }
             _ => panic!("not implemented"),
         }
     }
@@ -448,5 +454,22 @@ mod tests {
         cpu.powerup(&mut mem);
         cpu.program_counter = 0x90;
         cpu.step(&mut mem);
+    }
+
+    #[test]
+    fn test_addressing_absolute() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+        cpu.program_counter = 0x0000;
+
+        mem.write(0x0001, 0xFF);
+        mem.write(0x0002, 0xAA);
+
+        let result = cpu.get_address(&mut mem, AddressingMode::Absolute);
+        let expected = Some(0xAAFF);
+
+        assert_eq!(result, expected);
     }
 }
