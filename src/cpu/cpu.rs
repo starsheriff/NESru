@@ -167,6 +167,20 @@ impl CPU {
 
                 Some((b << 8) + a)
             }
+            AbsoluteX => {
+                let a = self.read(mem, self.program_counter + 1) as u16;
+                let b = self.read(mem, self.program_counter + 2) as u16;
+                let c = (b << 8) + a;
+
+                Some(c + self.index_x as u16)
+            }
+            AbsoluteY => {
+                let a = self.read(mem, self.program_counter + 1) as u16;
+                let b = self.read(mem, self.program_counter + 2) as u16;
+                let c = (b << 8) + a;
+
+                Some(c + self.index_y as u16)
+            }
             Accumulator => None,
             Implicit => panic!("Implicit is not implemented"),
             Immediate => Some(self.program_counter + 1),
@@ -469,6 +483,42 @@ mod tests {
 
         let result = cpu.get_address(&mut mem, AddressingMode::Absolute);
         let expected = Some(0xAAFF);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_addressing_absolute_x() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+        cpu.program_counter = 0x0000;
+        cpu.index_x = 0x02;
+
+        mem.write(0x0001, 0xBB);
+        mem.write(0x0002, 0xAA);
+
+        let result = cpu.get_address(&mut mem, AddressingMode::AbsoluteX);
+        let expected = Some(0xAABD);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_addressing_absolute_y() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+        cpu.program_counter = 0x0000;
+        cpu.index_y = 0x04;
+
+        mem.write(0x0001, 0xBB);
+        mem.write(0x0002, 0xAA);
+
+        let result = cpu.get_address(&mut mem, AddressingMode::AbsoluteY);
+        let expected = Some(0xAABF);
 
         assert_eq!(result, expected);
     }
