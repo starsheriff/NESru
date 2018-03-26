@@ -7,7 +7,8 @@ use memory::Memory;
 type MemoryAddress = u16;
 type PageCrossed = bool;
 
-pub struct OpResponse { bytes_consumed: usize,
+pub struct OpResponse {
+    bytes_consumed: usize,
     cycles_spent: usize,
 }
 
@@ -134,11 +135,11 @@ impl CPU {
                 Some(c + self.index_y as u16)
             }
             Accumulator => None,
-            Implicit => panic!("Implicit is not implemented"),
+            Implicit => None,
             Immediate => Some(self.program_counter + 1),
             IndexedIndirect => panic!("Implicit is not implemented"),
             IndirectIndexed => panic!("Implicit is not implemented"),
-            Relative => panic!("Implicit is not implemented"),
+            Relative => Some(self.program_counter + 1),
             ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
             ZeroPageX => {
                 let a = self.read(mem, self.program_counter + 1);
@@ -156,7 +157,6 @@ impl CPU {
     fn read(&self, mem: &Memory, addr: u16) -> u8 {
         mem.read(addr)
     }
-
 
     fn step(&mut self, mem: &mut Memory) {
         // TODO: really required?
@@ -334,7 +334,6 @@ impl CPU {
         panic!("not implemented");
     }
 }
-
 
 #[cfg(test)]
 mod tests {
