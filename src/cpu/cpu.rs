@@ -184,6 +184,9 @@ impl CPU {
             Accumulator => None,
             Implicit => panic!("Implicit is not implemented"),
             Immediate => Some(self.program_counter + 1),
+            IndexedIndirect => panic!("Implicit is not implemented"),
+            IndirectIndexed => panic!("Implicit is not implemented"),
+            Relative => panic!("Implicit is not implemented"),
             ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
             ZeroPageX => {
                 let a = self.read(mem, self.program_counter + 1);
@@ -195,35 +198,11 @@ impl CPU {
                 let b = a.wrapping_add(self.index_y);
                 Some(b as u16)
             }
-            _ => panic!("not implemented"),
         }
     }
 
     fn read(&self, mem: &Memory, addr: u16) -> u8 {
         mem.read(addr)
-    }
-
-    /// Returns the addressj for the next byte using the _zero page, x_
-    /// addressing mode.
-    ///
-    /// The address to be accessed by an instruction using indexed zero page
-    /// addressing is calculated by taking the 8 bit zero page address from
-    /// the instruction and adding the current value of the X register to it.
-    /// For example if the X register contains $0F and the instruction LDA $80,X
-    /// is executed then the accumulator will be loaded from $008F
-    /// (e.g. $80 + $0F => $8F).
-    ///
-    /// NB: The address calculation wraps around if the sum of the base address
-    /// and the register exceed $FF. If we repeat the last example but with $FF
-    /// in the X register then the accumulator will be loaded from $007F
-    /// (e.g. $80 + $FF => $7F) and not $017F.
-    fn get_address_zero_page_x(&self, mem: &Memory) -> (u8, PageCrossed) {
-        //TODO: wrap around (bug)
-        let a: u8 = mem.read(self.program_counter + 1);
-        let b: u8 = self.index_x;
-        let addr: u8 = a + b;
-        let val: u8 = mem.read(addr as MemoryAddress);
-        (val, false)
     }
 
     /// CPU instruction: ADC (add with carry)
@@ -352,16 +331,6 @@ pub enum AddressingMode {
     AbsoluteY,
     IndexedIndirect,
     IndirectIndexed,
-}
-
-//impl Display for CPU {
-//fn fmt(&self) -> Result<(), std::fmt::Error> {
-//()
-//}
-//}
-
-struct Instruction<'a> {
-    func: &'a fn(&mut CPU, &mut Memory),
 }
 
 #[cfg(test)]
