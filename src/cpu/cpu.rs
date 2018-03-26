@@ -145,7 +145,14 @@ impl CPU {
                 let e = (d << 8) + c;
                 Some(e)
             },
-            IndirectIndexed => panic!("Implicit is not implemented"),
+            IndirectIndexed => {
+                let a = self.read(mem, self.program_counter + 1) as u16;
+                let b = self.read(mem, a) as u16;
+                let c = self.read(mem, a + 1) as u16;
+                let d = (c << 8) + b;
+                let e = d + self.index_y as u16;
+                Some(e)
+            },
             Relative => Some(self.program_counter + 1),
             ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
             ZeroPageX => {
@@ -516,6 +523,25 @@ mod tests {
 
         let expected = Some(0xDAF0);
         let result = cpu.get_address(&mut mem, AddressingMode::IndexedIndirect);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_addressing_indirect_indexed() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+        cpu.program_counter = 0x0000;
+        cpu.index_y = 0x04;
+
+        mem.write(0x0001, 0xA0);
+        mem.write(0x00A0, 0xF0);
+        mem.write(0x00A1, 0xDA);
+
+        let expected = Some(0xDAF0 + 0x04);
+        let result = cpu.get_address(&mut mem, AddressingMode::IndirectIndexed);
 
         assert_eq!(result, expected);
     }
