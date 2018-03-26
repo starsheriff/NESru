@@ -7,6 +7,26 @@ use memory::Memory;
 type MemoryAddress = u16;
 type PageCrossed = bool;
 
+pub struct OpResponse { bytes_consumed: usize,
+    cycles_spent: usize,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum AddressingMode {
+    Implicit,
+    Accumulator,
+    Immediate,
+    ZeroPage,
+    ZeroPageX,
+    ZeroPageY,
+    Relative,
+    Absolute,
+    AbsoluteX,
+    AbsoluteY,
+    IndexedIndirect,
+    IndirectIndexed,
+}
+
 pub struct CPU {
     accumulator: u8,
     stack_pointer: u8,
@@ -78,9 +98,71 @@ impl CPU {
         }
     }
 
+    /// Get the memory address stored at (actually behind) the current program
+    /// counter.
+    ///
+    /// This method will increment the cpu cycles spent if it detects a page
+    /// crossing.
+    ///
+    /// 1. All instructions have only one argument, so there is only one memory
+    ///    address to read per instruction.
+    /// 2. Depending on the addressing mode, either one or two bytes have to be
+    ///    read from memory.
+    fn get_address(&self, mem: &Memory, mode: AddressingMode) -> Option<u16> {
+        //TODO
+        use cpu::cpu::AddressingMode::*;
+
+        match mode {
+            Absolute => {
+                let a = self.read(mem, self.program_counter + 1) as u16;
+                let b = self.read(mem, self.program_counter + 2) as u16;
+
+                Some((b << 8) + a)
+            }
+            AbsoluteX => {
+                let a = self.read(mem, self.program_counter + 1) as u16;
+                let b = self.read(mem, self.program_counter + 2) as u16;
+                let c = (b << 8) + a;
+
+                Some(c + self.index_x as u16)
+            }
+            AbsoluteY => {
+                let a = self.read(mem, self.program_counter + 1) as u16;
+                let b = self.read(mem, self.program_counter + 2) as u16;
+                let c = (b << 8) + a;
+
+                Some(c + self.index_y as u16)
+            }
+            Accumulator => None,
+            Implicit => panic!("Implicit is not implemented"),
+            Immediate => Some(self.program_counter + 1),
+            IndexedIndirect => panic!("Implicit is not implemented"),
+            IndirectIndexed => panic!("Implicit is not implemented"),
+            Relative => panic!("Implicit is not implemented"),
+            ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
+            ZeroPageX => {
+                let a = self.read(mem, self.program_counter + 1);
+                let b = a.wrapping_add(self.index_x);
+                Some(b as u16)
+            }
+            ZeroPageY => {
+                let a = self.read(mem, self.program_counter + 1);
+                let b = a.wrapping_add(self.index_y);
+                Some(b as u16)
+            }
+        }
+    }
+
+    fn read(&self, mem: &Memory, addr: u16) -> u8 {
+        mem.read(addr)
+    }
+
+
     fn step(&mut self, mem: &mut Memory) {
+        // TODO: really required?
         self.cycles += 1;
 
+        // TODO: really required? Should be handled by caller of `step`
         // delay cycles has higher priority than interrupts
         if (self.delay_cycles > 0) {
             self.delay_cycles -= 1;
@@ -144,65 +226,6 @@ impl CPU {
         };
 
         self.cycles += op_response.cycles_spent;
-    }
-
-    /// Get the memory address stored at (actually behind) the current program
-    /// counter.
-    ///
-    /// This method will increment the cpu cycles spent if it detects a page
-    /// crossing.
-    ///
-    /// 1. All instructions have only one argument, so there is only one memory
-    ///    address to read per instruction.
-    /// 2. Depending on the addressing mode, either one or two bytes have to be
-    ///    read from memory.
-    fn get_address(&self, mem: &Memory, mode: AddressingMode) -> Option<u16> {
-        //TODO
-        use cpu::cpu::AddressingMode::*;
-
-        match mode {
-            Absolute => {
-                let a = self.read(mem, self.program_counter + 1) as u16;
-                let b = self.read(mem, self.program_counter + 2) as u16;
-
-                Some((b << 8) + a)
-            }
-            AbsoluteX => {
-                let a = self.read(mem, self.program_counter + 1) as u16;
-                let b = self.read(mem, self.program_counter + 2) as u16;
-                let c = (b << 8) + a;
-
-                Some(c + self.index_x as u16)
-            }
-            AbsoluteY => {
-                let a = self.read(mem, self.program_counter + 1) as u16;
-                let b = self.read(mem, self.program_counter + 2) as u16;
-                let c = (b << 8) + a;
-
-                Some(c + self.index_y as u16)
-            }
-            Accumulator => None,
-            Implicit => panic!("Implicit is not implemented"),
-            Immediate => Some(self.program_counter + 1),
-            IndexedIndirect => panic!("Implicit is not implemented"),
-            IndirectIndexed => panic!("Implicit is not implemented"),
-            Relative => panic!("Implicit is not implemented"),
-            ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
-            ZeroPageX => {
-                let a = self.read(mem, self.program_counter + 1);
-                let b = a.wrapping_add(self.index_x);
-                Some(b as u16)
-            }
-            ZeroPageY => {
-                let a = self.read(mem, self.program_counter + 1);
-                let b = a.wrapping_add(self.index_y);
-                Some(b as u16)
-            }
-        }
-    }
-
-    fn read(&self, mem: &Memory, addr: u16) -> u8 {
-        mem.read(addr)
     }
 
     /// CPU instruction: ADC (add with carry)
@@ -312,26 +335,6 @@ impl CPU {
     }
 }
 
-pub struct OpResponse {
-    bytes_consumed: usize,
-    cycles_spent: usize,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum AddressingMode {
-    Implicit,
-    Accumulator,
-    Immediate,
-    ZeroPage,
-    ZeroPageX,
-    ZeroPageY,
-    Relative,
-    Absolute,
-    AbsoluteX,
-    AbsoluteY,
-    IndexedIndirect,
-    IndirectIndexed,
-}
 
 #[cfg(test)]
 mod tests {
