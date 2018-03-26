@@ -110,7 +110,7 @@ impl CPU {
     /// 2. Depending on the addressing mode, either one or two bytes have to be
     ///    read from memory.
     fn get_address(&self, mem: &Memory, mode: AddressingMode) -> Option<u16> {
-        //TODO
+        // TODO: detect page crossings!
         use cpu::cpu::AddressingMode::*;
 
         match mode {
@@ -141,28 +141,32 @@ impl CPU {
                 let a = self.read(mem, self.program_counter + 1) as u16;
                 let b = a.wrapping_add(self.index_x as u16);
                 let c = self.read(mem, b) as u16;
-                let d = self.read(mem, b+1) as u16;
+                let d = self.read(mem, b + 1) as u16;
                 let e = (d << 8) + c;
+
                 Some(e)
-            },
+            }
             IndirectIndexed => {
                 let a = self.read(mem, self.program_counter + 1) as u16;
                 let b = self.read(mem, a) as u16;
                 let c = self.read(mem, a + 1) as u16;
                 let d = (c << 8) + b;
                 let e = d + self.index_y as u16;
+
                 Some(e)
-            },
+            }
             Relative => Some(self.program_counter + 1),
             ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
             ZeroPageX => {
                 let a = self.read(mem, self.program_counter + 1);
                 let b = a.wrapping_add(self.index_x);
+
                 Some(b as u16)
             }
             ZeroPageY => {
                 let a = self.read(mem, self.program_counter + 1);
                 let b = a.wrapping_add(self.index_y);
+
                 Some(b as u16)
             }
         }
