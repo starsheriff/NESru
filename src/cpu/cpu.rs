@@ -109,6 +109,12 @@ impl CPU {
     ///    address to read per instruction.
     /// 2. Depending on the addressing mode, either one or two bytes have to be
     ///    read from memory.
+    ///
+    /// # Bugs/TODOs
+    ///
+    /// 1. detect page crossings. Where?
+    ///     * Which modes?
+    ///
     fn get_address(&self, mem: &Memory, mode: AddressingMode) -> Option<u16> {
         // TODO: detect page crossings!
         use cpu::cpu::AddressingMode::*;
@@ -121,6 +127,7 @@ impl CPU {
                 Some((b << 8) + a)
             }
             AbsoluteX => {
+                // TODO: detect page crossing
                 let a = self.read(mem, self.program_counter + 1) as u16;
                 let b = self.read(mem, self.program_counter + 2) as u16;
                 let c = (b << 8) + a;
@@ -128,6 +135,7 @@ impl CPU {
                 Some(c + self.index_x as u16)
             }
             AbsoluteY => {
+                // TODO: detect page crossing
                 let a = self.read(mem, self.program_counter + 1) as u16;
                 let b = self.read(mem, self.program_counter + 2) as u16;
                 let c = (b << 8) + a;
@@ -147,6 +155,7 @@ impl CPU {
                 Some(e)
             }
             IndirectIndexed => {
+                // TODO: detect page crossing
                 let a = self.read(mem, self.program_counter + 1) as u16;
                 let b = self.read(mem, a) as u16;
                 let c = self.read(mem, a + 1) as u16;
@@ -174,6 +183,11 @@ impl CPU {
 
     fn read(&self, mem: &Memory, addr: u16) -> u8 {
         mem.read(addr)
+    }
+
+    fn read16(&self, mem: &Memory, addr: u16) -> u16 {
+        // TODO: implement
+        0x0000
     }
 
     fn step(&mut self, mem: &mut Memory) {
