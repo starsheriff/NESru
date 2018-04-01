@@ -121,23 +121,23 @@ impl CPU {
 
         match mode {
             Absolute => {
-                let a = self.read(mem, self.program_counter + 1) as u16;
-                let b = self.read(mem, self.program_counter + 2) as u16;
+                let a = mem.read(self.program_counter + 1) as u16;
+                let b = mem.read(self.program_counter + 2) as u16;
 
                 Some((b << 8) + a)
             }
             AbsoluteX => {
                 // TODO: detect page crossing
-                let a = self.read(mem, self.program_counter + 1) as u16;
-                let b = self.read(mem, self.program_counter + 2) as u16;
+                let a = mem.read(self.program_counter + 1) as u16;
+                let b = mem.read(self.program_counter + 2) as u16;
                 let c = (b << 8) + a;
 
                 Some(c + self.index_x as u16)
             }
             AbsoluteY => {
                 // TODO: detect page crossing
-                let a = self.read(mem, self.program_counter + 1) as u16;
-                let b = self.read(mem, self.program_counter + 2) as u16;
+                let a = mem.read(self.program_counter + 1) as u16;
+                let b = mem.read(self.program_counter + 2) as u16;
                 let c = (b << 8) + a;
 
                 Some(c + self.index_y as u16)
@@ -146,43 +146,39 @@ impl CPU {
             Implicit => None,
             Immediate => Some(self.program_counter + 1),
             IndexedIndirect => {
-                let a = self.read(mem, self.program_counter + 1) as u16;
+                let a = mem.read(self.program_counter + 1) as u16;
                 let b = a.wrapping_add(self.index_x as u16);
-                let c = self.read(mem, b) as u16;
-                let d = self.read(mem, b + 1) as u16;
+                let c = mem.read(b) as u16;
+                let d = mem.read(b + 1) as u16;
                 let e = (d << 8) + c;
 
                 Some(e)
             }
             IndirectIndexed => {
                 // TODO: detect page crossing
-                let a = self.read(mem, self.program_counter + 1) as u16;
-                let b = self.read(mem, a) as u16;
-                let c = self.read(mem, a + 1) as u16;
+                let a = mem.read(self.program_counter + 1) as u16;
+                let b = mem.read(a) as u16;
+                let c = mem.read(a + 1) as u16;
                 let d = (c << 8) + b;
                 let e = d + self.index_y as u16;
 
                 Some(e)
             }
             Relative => Some(self.program_counter + 1),
-            ZeroPage => Some(self.read(mem, self.program_counter + 1) as u16),
+            ZeroPage => Some(mem.read(self.program_counter + 1) as u16),
             ZeroPageX => {
-                let a = self.read(mem, self.program_counter + 1);
+                let a = mem.read(self.program_counter + 1);
                 let b = a.wrapping_add(self.index_x);
 
                 Some(b as u16)
             }
             ZeroPageY => {
-                let a = self.read(mem, self.program_counter + 1);
+                let a = mem.read(self.program_counter + 1);
                 let b = a.wrapping_add(self.index_y);
 
                 Some(b as u16)
             }
         }
-    }
-
-    fn read(&self, mem: &Memory, addr: u16) -> u8 {
-        mem.read(addr)
     }
 
     fn read16(&self, mem: &Memory, addr: u16) -> u16 {
@@ -274,7 +270,7 @@ impl CPU {
     /// - overflow flag: set if sign bit is incorrect
     fn adc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
         let addr = self.get_address(mem, opi.mode).unwrap();
-        let m = self.read(mem, addr);
+        let m = mem.read(addr);
 
         let a = self.accumulator;
         let c = self.carry_flag();
@@ -307,7 +303,7 @@ impl CPU {
     /// using the contents of a byte of memory.
     fn and(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
         let addr = self.get_address(mem, mode).unwrap();
-        let m = self.read(mem, addr);
+        let m = mem.read(addr);
         let a = self.accumulator;
 
         self.accumulator = a & m;
@@ -331,7 +327,7 @@ impl CPU {
             }
             _ => {
                 let addr = self.get_address(mem, mode).unwrap();
-                let m = self.read(mem, addr);
+                let m = mem.read(addr);
                 let (v, c) = m.overflowing_shl(1);
                 self.status_register.carry_flag = c;
                 //self.write_mem(val);
