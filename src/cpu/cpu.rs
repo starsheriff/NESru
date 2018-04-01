@@ -186,8 +186,10 @@ impl CPU {
     }
 
     fn read16(&self, mem: &Memory, addr: u16) -> u16 {
-        // TODO: implement
-        0x0000
+        let msb = mem.read(addr) as u16;
+        let lsb = mem.read(addr + 1) as u16;
+
+        (msb << 8) + lsb
     }
 
     fn step(&mut self, mem: &mut Memory) {
@@ -561,6 +563,20 @@ mod tests {
         let expected = Some(0xDAF0 + 0x04);
         let result = cpu.get_address(&mut mem, AddressingMode::IndirectIndexed);
 
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_read16() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+        mem.write(0x0004, 0xAA);
+        mem.write(0x0005, 0xCC);
+
+        let result = cpu.read16(&mem, 0x0004);
+        let expected = 0xAACC;
         assert_eq!(result, expected);
     }
 }
