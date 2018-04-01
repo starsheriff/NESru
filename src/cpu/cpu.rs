@@ -38,8 +38,6 @@ pub struct CPU {
 
     /// count the total amount of cycles spent
     cycles: usize,
-    /// delay the cpu for a specific amount of cycles
-    delay_cycles: u8,
 }
 
 impl CPU {
@@ -52,7 +50,6 @@ impl CPU {
             index_y: 0,
             status_register: StatusRegister::new(),
 
-            delay_cycles: 0,
             cycles: 0,
         }
     }
@@ -164,7 +161,11 @@ impl CPU {
 
                 Some(e)
             }
-            Relative => Some(self.program_counter + 1),
+            Relative => {
+                let relative_value = mem.read(self.program_counter + 1);
+                println!("relative value is: {}", relative_value);
+                Some(self.program_counter + relative_value as u16)
+            }
             ZeroPage => Some(mem.read(self.program_counter + 1) as u16),
             ZeroPageX => {
                 let a = mem.read(self.program_counter + 1);
@@ -190,14 +191,7 @@ impl CPU {
 
     fn step(&mut self, mem: &mut Memory) {
         // TODO: really required?
-        self.cycles += 1;
-
-        // TODO: really required? Should be handled by caller of `step`
-        // delay cycles has higher priority than interrupts
-        if (self.delay_cycles > 0) {
-            self.delay_cycles -= 1;
-            return;
-        }
+        //self.cycles += 1;
 
         // TODO: check for interrupts
         //
@@ -210,7 +204,7 @@ impl CPU {
     fn execute_next(&mut self, mem: &mut Memory) {
         use cpu::cpu::AddressingMode::*;
 
-        let op_response = match self.program_counter {
+        match mem.read(self.program_counter) {
             // ADC
             0x69 => self.adc(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
             0x65 => self.adc(mem, &OpInfo{mode: ZeroPage,  bytes: 2, cycles: 3}),
@@ -251,14 +245,21 @@ impl CPU {
             0x24 => self.bit(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
             0x2C => self.bit(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
 
-            // BMI - Branch if Minus
+            // BMI (branch if minus)
             0x30 => self.bmi(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
+
+            // BNE (branch if not equal)
+            0xD0 => self.bne(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
+
+            // BPL (branch if positive)
+            0x10 => self.bpl(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
+
+            // BRK (force interrupt)
+            0x00 => self.brk(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 7}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
-
-        self.cycles += op_response.cycles_spent;
     }
 
     /// CPU instruction: ADC (add with carry)
@@ -271,7 +272,7 @@ impl CPU {
     /// - zero flag: set if accumulator is zero
     /// - negative flag: set if bit 7 (highest bit) is set
     /// - overflow flag: set if sign bit is incorrect
-    fn adc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn adc(&mut self, mem: &mut Memory, opi: &OpInfo) {
         let addr = self.get_address(mem, opi.mode).unwrap();
         let m = mem.read(addr);
 
@@ -292,19 +293,13 @@ impl CPU {
 
         self.update_zero_flag();
         self.update_negative_flag();
-
-        // TODO: fix return value
-        OpResponse {
-            bytes_consumed: opi.bytes,
-            cycles_spent: opi.cycles,
-        }
     }
 
     /// CPU instruction: AND (logical AND)
     ///
     /// A logical AND is performed, bit by bit, on the accumulator contents
     /// using the contents of a byte of memory.
-    fn and(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+    fn and(&mut self, mem: &mut Memory, mode: AddressingMode) {
         let addr = self.get_address(mem, mode).unwrap();
         let m = mem.read(addr);
         let a = self.accumulator;
@@ -313,15 +308,9 @@ impl CPU {
 
         self.update_zero_flag();
         self.update_negative_flag();
-
-        // TODO: fix return value
-        OpResponse {
-            bytes_consumed: 2,
-            cycles_spent: 2,
-        }
     }
 
-    fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+    fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) {
         match mode {
             accumulator => {
                 let (v, c) = self.accumulator.overflowing_shl(1);
@@ -339,275 +328,277 @@ impl CPU {
 
         self.update_zero_flag();
         self.update_negative_flag();
+    }
 
-        // TODO: fix return value
-        OpResponse {
-            bytes_consumed: 2,
-            cycles_spent: 2,
+    pub fn bcc(&mut self, mem: &mut Memory, opi: &OpInfo) {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bcs(&mut self, mem: &mut Memory, opi: &OpInfo) {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn beq(&mut self, mem: &mut Memory, opi: &OpInfo) {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bit(&mut self, mem: &mut Memory, opi: &OpInfo) {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bmi(&mut self, mem: &mut Memory, opi: &OpInfo) {
+        // TODO: check if cycles are correct. Should be +2 if branch is to a new
+        // TODO: test cycles spend for no branch case
+        // page...
+        if self.status_register.negative_flag {
+            let addr = self.get_address(mem, opi.mode).unwrap();
+            self.program_counter = addr;
+            self.cycles += 1;
         }
+
+        self.cycles += opi.cycles;
     }
 
-    pub fn bcc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn bne(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn bcs(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn bpl(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn beq(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn brk(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn bit(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn bvc(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn bmi(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn bvs(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn bne(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn clc(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn bpl(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn cld(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn brk(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn cli(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn bvc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn clv(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn bvs(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn cmp(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn clc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn cpx(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn cld(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn cpy(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn cli(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn dec(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn clv(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn dex(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn cmp(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn dey(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn cpx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn eor(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn cpy(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn inc(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn dec(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn inx(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn dex(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn iny(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn dey(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn jmp(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn eor(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn jsr(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn inc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn lda(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn inx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn ldx(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn iny(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn ldy(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn jmp(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn lsr(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn jsr(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn nop(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn lda(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn ora(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn ldx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn pha(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn ldy(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn php(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn lsr(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn pla(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn nop(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn plp(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn ora(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn rol(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn pha(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn ror(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn php(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn rti(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn pla(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn rts(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn plp(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn sbc(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn rol(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn sec(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn ror(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn sed(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn rti(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn sei(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn rts(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn sta(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn sbc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn stx(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn sec(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn sty(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn sed(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn tax(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn sei(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn tay(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn sta(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn tsx(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn stx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn txa(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn sty(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn txs(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
-    fn tax(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        // TODO
-        panic!("not implemented");
-    }
-
-    fn tay(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        // TODO
-        panic!("not implemented");
-    }
-
-    fn tsx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        // TODO
-        panic!("not implemented");
-    }
-
-    fn txa(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        // TODO
-        panic!("not implemented");
-    }
-
-    fn txs(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
-        // TODO
-        panic!("not implemented");
-    }
-
-    fn tya(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+    fn tya(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
@@ -663,22 +654,6 @@ mod tests {
     }
 
     #[test]
-    fn cpu_delay_cycles() {
-        let mut cpu = CPU::new();
-        let mut mem = Memory::new();
-
-        cpu.powerup(&mut mem);
-
-        cpu.delay_cycles = 3;
-        cpu.step(&mut mem);
-        assert_eq!(cpu.cycles, 1);
-        cpu.step(&mut mem);
-        assert_eq!(cpu.cycles, 2);
-        cpu.step(&mut mem);
-        assert_eq!(cpu.cycles, 3);
-    }
-
-    #[test]
     fn cpu_set_negative_true() {
         let mut cpu = CPU::new();
 
@@ -704,7 +679,8 @@ mod tests {
         let mut mem = Memory::new();
 
         cpu.powerup(&mut mem);
-        cpu.program_counter = 0x69;
+        cpu.program_counter = 0x05;
+        mem.write(cpu.program_counter, 0x69);
         cpu.step(&mut mem);
     }
 
@@ -715,7 +691,8 @@ mod tests {
         let mut mem = Memory::new();
 
         cpu.powerup(&mut mem);
-        cpu.program_counter = 0x90;
+        cpu.program_counter = 0x05;
+        mem.write(cpu.program_counter, 0x90);
         cpu.step(&mut mem);
     }
 
@@ -823,4 +800,30 @@ mod tests {
         let expected = 0xAACC;
         assert_eq!(result, expected);
     }
+
+    #[test]
+    fn test_bmi_opcode_30_do_branch() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+
+        // set initial conditions
+        cpu.status_register.negative_flag = true;
+        cpu.program_counter = 0x05;
+        mem.write(0x05, 0x30); // next operation is 0x30
+        mem.write(0x06, 0x02); // relative displacement is 2
+        let expected = 0x07; // expect program counter to have this value
+
+        let cycles_before = cpu.cycles;
+        cpu.step(&mut mem);
+        let cycles_after = cpu.cycles;
+
+        let result = cpu.program_counter;
+        let cycles_spent = cycles_after - cycles_before;
+
+        assert_eq!(result, expected);
+        assert_eq!(cycles_spent, 3);
+    }
+
 }
