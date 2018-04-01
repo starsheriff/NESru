@@ -27,6 +27,14 @@ impl Memory {
     }
 }
 
+fn page(addr: u16) -> u8{
+    (addr >> 8) as u8
+}
+
+fn page_crossed(addr_a: u16, addr_b: u16) -> bool {
+    (addr_a >> 8) != (addr_b >> 8)
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -38,5 +46,18 @@ mod test {
         for x in (0x00FF..0x0200) {
             assert_eq!(mem.read(x), 0x04);
         }
+    }
+
+    #[test]
+    fn page_number_0() {
+        assert_eq!(page(0x0000), 0);
+        assert_eq!(page(0x00FF), 0);
+        assert_eq!(page(0x0100), 1);
+    }
+
+    #[test]
+    fn page_crossing_detected() {
+        assert_eq!(page_crossed(0x0000, 0x00FF), false);
+        assert_eq!(page_crossed(0x00FF, 0x01AA), true);
     }
 }
