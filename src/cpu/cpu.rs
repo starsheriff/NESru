@@ -2,7 +2,7 @@ use cpu::status_register::StatusRegister;
 use cpu::utils;
 use cpu::opinfo::{OpInfo, OP_INFO};
 
-use memory::Memory;
+use memory::{self, Memory};
 
 type MemoryAddress = u16;
 type PageCrossed = bool;
@@ -351,13 +351,19 @@ impl CPU {
     }
 
     fn bmi(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO: check if cycles are correct. Should be +2 if branch is to a new
-        // TODO: test cycles spend for no branch case
-        // page...
         if self.status_register.negative_flag {
             let addr = self.get_address(mem, opi.mode).unwrap();
-            self.program_counter = addr;
+            let page_crossed = memory::page_crossed(self.program_counter, addr);
             self.cycles += 1;
+
+            // add 2 cycles if the target address is on a new page
+            if page_crossed {
+                self.cycles += 2;
+            }
+
+            self.program_counter = addr;
+        } else {
+            self.program_counter += opi.bytes as u16;
         }
 
         self.cycles += opi.cycles;
@@ -802,7 +808,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bmi_opcode_30_do_branch() {
+    fn test_bmi_opcode_30_do_branch_to_same_page() {
         let mut cpu = CPU::new();
         let mut mem = Memory::new();
 
@@ -812,18 +818,74 @@ mod tests {
         cpu.status_register.negative_flag = true;
         cpu.program_counter = 0x05;
         mem.write(0x05, 0x30); // next operation is 0x30
-        mem.write(0x06, 0x02); // relative displacement is 2
-        let expected = 0x07; // expect program counter to have this value
+        mem.write(0x06, 0x04); // relative displacement is 2
+        let expected = 0x09; // expect program counter to have this value
 
+        // execute
         let cycles_before = cpu.cycles;
         cpu.step(&mut mem);
         let cycles_after = cpu.cycles;
 
+        // assert
         let result = cpu.program_counter;
         let cycles_spent = cycles_after - cycles_before;
 
         assert_eq!(result, expected);
         assert_eq!(cycles_spent, 3);
+    }
+
+    #[test]
+    fn test_bmi_opcode_30_do_branch_to_new_page() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+
+        // set initial conditions
+        cpu.status_register.negative_flag = true;
+        cpu.program_counter = 0xEE;
+        mem.write(0xEE, 0x30); // next operation is 0x30
+        mem.write(0xEF, 0xDD); // relative displacement is 2
+        let expected = 0xEE + 0xDD; // expect program counter to have this value
+
+        // execute
+        let cycles_before = cpu.cycles;
+        cpu.step(&mut mem);
+        let cycles_after = cpu.cycles;
+
+        // assert
+        let result = cpu.program_counter;
+        let cycles_spent = cycles_after - cycles_before;
+
+        assert_eq!(result, expected);
+        assert_eq!(cycles_spent, 5);
+    }
+
+    #[test]
+    fn test_bmi_opcode_30_no_branch() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+
+        // set initial conditions
+        cpu.status_register.negative_flag = false;
+        cpu.program_counter = 0x05;
+        mem.write(0x05, 0x30); // next operation is 0x30
+        mem.write(0x06, 0x02); // relative displacement is 2
+        let expected = 0x07; // expect program counter to have this value
+
+        // execute
+        let cycles_before = cpu.cycles;
+        cpu.step(&mut mem);
+        let cycles_after = cpu.cycles;
+
+        // assert
+        let result = cpu.program_counter;
+        let cycles_spent = cycles_after - cycles_before;
+
+        assert_eq!(result, expected);
+        assert_eq!(cycles_spent, 2);
     }
 
 }

@@ -27,11 +27,11 @@ impl Memory {
     }
 }
 
-fn page(addr: u16) -> u8{
+pub fn page(addr: u16) -> u8{
     (addr >> 8) as u8
 }
 
-fn page_crossed(addr_a: u16, addr_b: u16) -> bool {
+pub fn page_crossed(addr_a: u16, addr_b: u16) -> bool {
     (addr_a >> 8) != (addr_b >> 8)
 }
 
