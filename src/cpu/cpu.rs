@@ -248,8 +248,11 @@ impl CPU {
             0xF0 => self.beq(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
 
             // BIT (bit test)
-            0x24 => self.bit(mem, AddressingMode::ZeroPage),
-            0x2C => self.bit(mem, AddressingMode::Absolute),
+            0x24 => self.bit(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
+            0x2C => self.bit(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
+
+            // BMI - Branch if Minus
+            0x30 => self.bmi(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -359,7 +362,252 @@ impl CPU {
         panic!("not implemented");
     }
 
-    fn bit(&mut self, mem: &mut Memory, mode: AddressingMode) -> OpResponse {
+    fn bit(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bmi(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bne(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bpl(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn brk(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bvc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn bvs(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn clc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn cld(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn cli(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn clv(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn cmp(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn cpx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn cpy(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn dec(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn dex(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn dey(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn eor(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn inc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn inx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn iny(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn jmp(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn jsr(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn lda(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn ldx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn ldy(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn lsr(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn nop(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn ora(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn pha(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn php(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn pla(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn plp(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn rol(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn ror(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn rti(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn rts(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn sbc(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn sec(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn sed(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn sei(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn sta(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn stx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn sty(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn tax(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn tay(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn tsx(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn txa(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn txs(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
+        // TODO
+        panic!("not implemented");
+    }
+
+    fn tya(&mut self, mem: &mut Memory, opi: &OpInfo) -> OpResponse {
         // TODO
         panic!("not implemented");
     }
