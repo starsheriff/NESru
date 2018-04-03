@@ -29,6 +29,8 @@ pub struct OpInfo {
 
 /// bytes in OpInfo do not contain conditional cycles like they occur on page
 /// crossings
+///
+/// Currently not in use in favour for direct encoding in cpu struct.
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub static OP_INFO: [OpInfo; 256] = [
     // 0x00

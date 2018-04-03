@@ -350,8 +350,9 @@ impl CPU {
         panic!("not implemented");
     }
 
-    fn bmi(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        if self.status_register.negative_flag {
+    fn conditional_branch(&mut self, mem: &mut Memory, opi: &OpInfo, condition: bool)
+    {
+        if condition {
             let addr = self.get_address(mem, opi.mode).unwrap();
             let page_crossed = memory::page_crossed(self.program_counter, addr);
             self.cycles += 1;
@@ -369,9 +370,22 @@ impl CPU {
         self.cycles += opi.cycles;
     }
 
+    /// CPU instruction: BMI (branch if minus)
+    ///
+    /// If the negative flag is set then add the relative displacement to the
+    /// program counter to cause a branch to a new location.
+    fn bmi(&mut self, mem: &mut Memory, opi: &OpInfo) {
+        let condition = self.status_register.negative_flag;
+        self.conditional_branch(mem, opi, condition);
+    }
+
+    /// CPU instruction: BNE (branch if not equal)
+    ///
+    /// If the zero flag is clear then add the relative displacement to the
+    /// program counter to cause a branch to a new location.
     fn bne(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let condition = self.status_register.zero_flag == false;
+        self.conditional_branch(mem, opi, condition);
     }
 
     fn bpl(&mut self, mem: &mut Memory, opi: &OpInfo) {
