@@ -388,9 +388,13 @@ impl CPU {
         self.conditional_branch(mem, opi, condition);
     }
 
+    /// CPU instruction: BPL (branch if positive)
+    ///
+    /// If the negative flag is clear then add the relative displacement to
+    /// the program counter to cause a branch to a new location.
     fn bpl(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let condition = self.status_register.negative_flag == false;
+        self.conditional_branch(mem, opi, condition);
     }
 
     fn brk(&mut self, mem: &mut Memory, opi: &OpInfo) {
