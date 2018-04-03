@@ -7,6 +7,9 @@ use memory::{self, Memory};
 type MemoryAddress = u16;
 type PageCrossed = bool;
 
+// TODO: set correct address
+static STACK_BASE_ADDRESS: u16 = 0x4000;
+
 pub struct OpResponse {
     bytes_consumed: usize,
     cycles_spent: usize,
@@ -185,6 +188,36 @@ impl CPU {
     fn read16(&self, mem: &Memory, addr: u16) -> u16 {
         let msb = mem.read(addr) as u16;
         let lsb = mem.read(addr + 1) as u16;
+
+        (msb << 8) + lsb
+    }
+
+    fn push(&mut self, mem: &mut Memory, val: u8) {
+        let addr = STACK_BASE_ADDRESS + self.stack_pointer as u16;
+        mem.write(addr, val);
+        self.stack_pointer = self.stack_pointer.wrapping_sub(1);
+    }
+
+    fn push16(&mut self, mem: &mut Memory, val: u16) {
+        let msb = ((val >> 8) as u8) & 0xFF;
+        let lsb = (val as u8) & 0xFF;
+
+        self.push(mem, msb);
+        self.push(mem, lsb);
+    }
+
+    fn pop(&mut self, mem: &mut Memory) -> u8 {
+        let addr = STACK_BASE_ADDRESS + self.stack_pointer as u16 + 1;
+        let val = mem.read(addr);
+
+        self.stack_pointer = self.stack_pointer.wrapping_add(1);
+
+        val
+    }
+
+    fn pop16(&mut self, mem: &mut Memory) -> u16 {
+        let lsb = self.pop(mem) as u16;
+        let msb = self.pop(mem) as u16;
 
         (msb << 8) + lsb
     }
@@ -397,9 +430,20 @@ impl CPU {
         self.conditional_branch(mem, opi, condition);
     }
 
+    /// CPU instruction: BRK (force interrupt)
+    ///
+    /// The BRK instruction forces the generation of an interrupt request. The
+    /// program counter and processor status are pushed on the stack then the
+    /// IRQ interrupt vector at $FFFE/F is loaded into the PC and the break
+    /// flag in the status set to one.
     fn brk(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let sr = self.status_register.to_u8();
+        self.push(mem, sr);
+        let pc = self.program_counter;
+        self.push16(mem, pc);
+
+        // TODO: load interrupt vector
+        self.status_register.break_command = true;
     }
 
     fn bvc(&mut self, mem: &mut Memory, opi: &OpInfo) {
@@ -904,6 +948,36 @@ mod tests {
 
         assert_eq!(result, expected);
         assert_eq!(cycles_spent, 2);
+    }
+
+    #[test]
+    fn test_push_and_pop() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+
+        let sp_before = cpu.stack_pointer;
+        cpu.push(&mut mem, 0x42);
+        assert_eq!(cpu.stack_pointer, sp_before.wrapping_sub(1));
+
+        assert_eq!(cpu.pop(&mut mem), 0x42);
+        assert_eq!(cpu.stack_pointer, sp_before);
+    }
+
+    #[test]
+    fn test_push16_and_pop16() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+
+        let sp_before = cpu.stack_pointer;
+        cpu.push16(&mut mem, 0xAA42);
+        assert_eq!(cpu.stack_pointer, sp_before.wrapping_sub(2));
+
+        assert_eq!(cpu.pop16(&mut mem), 0xAA42);
+        assert_eq!(cpu.stack_pointer, sp_before);
     }
 
 }
