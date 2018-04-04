@@ -185,10 +185,10 @@ impl CPU {
     }
 
     fn read16(&self, mem: &Memory, addr: u16) -> u16 {
-        let msb = mem.read(addr) as u16;
-        let lsb = mem.read(addr + 1) as u16;
+        let hi = mem.read(addr) as u16;
+        let lo = mem.read(addr + 1) as u16;
 
-        (msb << 8) + lsb
+        (hi << 8) + lo
     }
 
     fn push(&mut self, mem: &mut Memory, val: u8) {
@@ -288,6 +288,15 @@ impl CPU {
 
             // BRK (force interrupt)
             0x00 => self.brk(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 7}),
+
+            // BVC (branch if overflow clear)
+            0x50 => self.bvc(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
+
+            // BVS (branch if overflow set)
+            0x70 => self.bvs(mem, &OpInfo{mode: Relative, bytes: 2, cycles: 2}),
+
+            // CLC (clear carry flag)
+            0x18 => self.clc(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -421,6 +430,7 @@ impl CPU {
         }
 
         self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn conditional_branch(&mut self, mem: &mut Memory, opi: &OpInfo, condition: bool) {
@@ -485,19 +495,32 @@ impl CPU {
         self.status_register.break_command = true;
     }
 
+
+    /// CPU instruction: BVC (branch if overflow clear)
+    ///
+    /// If the overflow flag is clear then add the relative displacement to the
+    /// program counter to cause a branch to a new location.
     fn bvc(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let condition = self.status_register.overflow_flag == false;
+        self.conditional_branch(mem, opi, condition);
     }
 
+    /// CPU instruction: BVS (branch if overflow set)
+    ///
+    /// If the overflow flag is set then add the relative displacement to the
+    /// program counter to cause a branch to a new location.
     fn bvs(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let condition = self.status_register.overflow_flag;
+        self.conditional_branch(mem, opi, condition);
     }
 
+    /// CPU instruction: CLC (clear carry flag)
+    ///
+    /// Set the carry flag to zero.
     fn clc(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.status_register.carry_flag = false;
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn cld(&mut self, mem: &mut Memory, opi: &OpInfo) {
@@ -980,10 +1003,13 @@ mod tests {
         mem.write(0x00, 0b11000000);
 
         let cycles_before = cpu.cycles;
+        let pc_before = cpu.program_counter;
         cpu.step(&mut mem);
         let cycles_after = cpu.cycles;
+        let pc_after = cpu.program_counter;
 
         assert_eq!(cycles_after-cycles_before, 3);
+        assert_eq!(pc_after-pc_before, 2);
         assert_eq!(cpu.status_register.overflow_flag, true);
         assert_eq!(cpu.status_register.negative_flag, true);
     }
