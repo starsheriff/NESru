@@ -221,7 +221,7 @@ impl CPU {
         (hi << 8) + lo
     }
 
-    fn step(&mut self, mem: &mut Memory) {
+    pub fn step(&mut self, mem: &mut Memory) {
         // TODO: really required?
         //self.cycles += 1;
 
