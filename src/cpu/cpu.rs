@@ -397,9 +397,30 @@ impl CPU {
         self.conditional_branch(mem, opi, condition);
     }
 
+    /// CPU instruction: BIT (bit test)
+    ///
+    /// This instructions is used to test if one or more bits are set in a
+    /// target memory location. The mask pattern in A is ANDed with the value
+    /// in memory to set or clear the zero flag, but the result is not kept.
+    /// Bits 7 and 6 of the value from memory are copied into the N and V flags.
     fn bit(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+        let res = m & self.accumulator;
+
+        if res == 0x00 {
+            self.status_register.zero_flag = true;
+        }
+
+        if m >> 7 & 0x01 == 0x01 {
+            self.status_register.negative_flag = true;
+        }
+
+        if m >> 6 & 0x01 == 0x01 {
+            self.status_register.overflow_flag = true;
+        }
+
+        self.cycles += opi.cycles;
     }
 
     fn conditional_branch(&mut self, mem: &mut Memory, opi: &OpInfo, condition: bool) {
@@ -943,6 +964,28 @@ mod tests {
 
         assert_eq!(result, expected);
         assert_eq!(cycles_spent, 2);
+    }
+
+    #[test]
+    fn test_bit_opcode_24() {
+        let mut cpu = CPU::new();
+        let mut mem = Memory::new();
+
+        cpu.powerup(&mut mem);
+
+        // set initial conditions
+        cpu.program_counter = 0x05;
+        mem.write(0x05, 0x24);
+        mem.write(0x06, 0x00); // memory address is 0x00
+        mem.write(0x00, 0b11000000);
+
+        let cycles_before = cpu.cycles;
+        cpu.step(&mut mem);
+        let cycles_after = cpu.cycles;
+
+        assert_eq!(cycles_after-cycles_before, 3);
+        assert_eq!(cpu.status_register.overflow_flag, true);
+        assert_eq!(cpu.status_register.negative_flag, true);
     }
 
     #[test]
