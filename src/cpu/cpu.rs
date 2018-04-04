@@ -301,6 +301,9 @@ impl CPU {
             // CLD (clear decimal mode)
             0xD8 => self.cld(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // CLI (clear interrupt disable)
+            0x58 => self.cli(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -535,9 +538,14 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: CLI (clear interrupt disable)
+    ///
+    /// Clears the interrupt disable flag allowing normal interrupt requests to
+    /// be serviced.
     fn cli(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.status_register.interrupt_disable = false;
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn clv(&mut self, mem: &mut Memory, opi: &OpInfo) {
