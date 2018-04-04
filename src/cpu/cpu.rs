@@ -298,6 +298,9 @@ impl CPU {
             // CLC (clear carry flag)
             0x18 => self.clc(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // CLD (clear decimal mode)
+            0xD8 => self.cld(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -523,9 +526,13 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: CLD (clear decimal mode)
+    ///
+    /// Sets the decimal mode flag to zero.
     fn cld(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.status_register.decimal_mode = false;
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn cli(&mut self, mem: &mut Memory, opi: &OpInfo) {
