@@ -304,6 +304,9 @@ impl CPU {
             // CLI (clear interrupt disable)
             0x58 => self.cli(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // CLV (clear overflow flag)
+            0xB8 => self.clv(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -548,9 +551,13 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: CLV (clear overflow flag)
+    ///
+    /// Clears the overflow flag.
     fn clv(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.status_register.overflow_flag = false;
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn cmp(&mut self, mem: &mut Memory, opi: &OpInfo) {
