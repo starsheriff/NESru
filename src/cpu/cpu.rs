@@ -198,11 +198,11 @@ impl CPU {
     }
 
     fn push16(&mut self, mem: &mut Memory, val: u16) {
-        let msb = ((val >> 8) as u8) & 0xFF;
-        let lsb = (val as u8) & 0xFF;
+        let hi = ((val >> 8) as u8) & 0xFF;
+        let lo = (val as u8) & 0xFF;
 
-        self.push(mem, msb);
-        self.push(mem, lsb);
+        self.push(mem, hi);
+        self.push(mem, lo);
     }
 
     fn pop(&mut self, mem: &mut Memory) -> u8 {
@@ -215,10 +215,10 @@ impl CPU {
     }
 
     fn pop16(&mut self, mem: &mut Memory) -> u16 {
-        let lsb = self.pop(mem) as u16;
-        let msb = self.pop(mem) as u16;
+        let lo = self.pop(mem) as u16;
+        let hi = self.pop(mem) as u16;
 
-        (msb << 8) + lsb
+        (hi << 8) + lo
     }
 
     fn step(&mut self, mem: &mut Memory) {
