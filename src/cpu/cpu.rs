@@ -1,6 +1,6 @@
+use cpu::opinfo::{OpInfo, OP_INFO};
 use cpu::status_register::StatusRegister;
 use cpu::utils;
-use cpu::opinfo::{OpInfo, OP_INFO};
 
 use memory::{self, Memory};
 
@@ -166,7 +166,6 @@ impl CPU {
             }
             Relative => {
                 let relative_value = mem.read(self.program_counter + 1);
-                println!("relative value is: {}", relative_value);
                 Some(self.program_counter + relative_value as u16)
             }
             ZeroPage => Some(mem.read(self.program_counter + 1) as u16),
@@ -343,7 +342,7 @@ impl CPU {
         self.update_negative_flag();
     }
 
-    /// CPU instruction ASL (arithmetic shift left)
+    /// CPU instruction: ASL (arithmetic shift left)
     ///
     /// This operation shifts all the bits of the accumulator or memory
     /// contents one bit left. Bit 0 is set to 0 and bit 7 is placed in the
@@ -369,19 +368,33 @@ impl CPU {
         self.update_negative_flag();
     }
 
+    /// CPU instruction: BCC (branch if carry clear)
+    ///
+    /// If the carry flag is clear then add the relative displacement to the
+    /// program counter to cause a branch to a new location.
+    ///
+    /// TODO: test
     fn bcc(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let condition = self.status_register.carry_flag == false;
+        self.conditional_branch(mem, opi, condition);
     }
 
+    /// CPU instruction: BCS (branch if carry set)
+    ///
+    /// If the carry flag is set then add the relative displacement to the
+    /// program counter to cause a branch to a new location.
     fn bcs(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let condition = self.status_register.carry_flag;
+        self.conditional_branch(mem, opi, condition);
     }
 
+    /// CPU instruction: BEQ (branch if equal)
+    ///
+    /// If the zero flag is set then add the relative displacement to the
+    /// program counter to cause a branch to a new location.
     fn beq(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let condition = self.status_register.zero_flag;
+        self.conditional_branch(mem, opi, condition);
     }
 
     fn bit(&mut self, mem: &mut Memory, opi: &OpInfo) {
@@ -389,8 +402,7 @@ impl CPU {
         panic!("not implemented");
     }
 
-    fn conditional_branch(&mut self, mem: &mut Memory, opi: &OpInfo, condition: bool)
-    {
+    fn conditional_branch(&mut self, mem: &mut Memory, opi: &OpInfo, condition: bool) {
         if condition {
             let addr = self.get_address(mem, opi.mode).unwrap();
             let page_crossed = memory::page_crossed(self.program_counter, addr);
@@ -745,29 +757,6 @@ mod tests {
         assert_eq!(cpu.status_register.negative_flag, false);
         cpu.update_negative_flag();
         assert_eq!(cpu.status_register.negative_flag, false);
-    }
-
-    #[test]
-    fn test_optcode_0x69() {
-        let mut cpu = CPU::new();
-        let mut mem = Memory::new();
-
-        cpu.powerup(&mut mem);
-        cpu.program_counter = 0x05;
-        mem.write(cpu.program_counter, 0x69);
-        cpu.step(&mut mem);
-    }
-
-    #[should_panic]
-    #[test]
-    fn test_optcode_0x90() {
-        let mut cpu = CPU::new();
-        let mut mem = Memory::new();
-
-        cpu.powerup(&mut mem);
-        cpu.program_counter = 0x05;
-        mem.write(cpu.program_counter, 0x90);
-        cpu.step(&mut mem);
     }
 
     #[test]
