@@ -345,7 +345,7 @@ impl CPU {
 
     fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) {
         match mode {
-            accumulator => {
+            AddressingMode::Accumulator => {
                 let (v, c) = self.accumulator.overflowing_shl(1);
                 self.accumulator = v;
                 self.status_register.carry_flag = c;
@@ -363,7 +363,7 @@ impl CPU {
         self.update_negative_flag();
     }
 
-    pub fn bcc(&mut self, mem: &mut Memory, opi: &OpInfo) {
+    fn bcc(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
