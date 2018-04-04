@@ -343,6 +343,13 @@ impl CPU {
         self.update_negative_flag();
     }
 
+    /// CPU instruction ASL (arithmetic shift left)
+    ///
+    /// This operation shifts all the bits of the accumulator or memory
+    /// contents one bit left. Bit 0 is set to 0 and bit 7 is placed in the
+    /// carry flag. The effect of this operation is to multiply the memory
+    /// contents by 2 (ignoring 2's complement considerations), setting the
+    /// carry if the result will not fit in 8 bits.
     fn asl(&mut self, mem: &mut Memory, mode: AddressingMode) {
         match mode {
             AddressingMode::Accumulator => {
@@ -355,7 +362,6 @@ impl CPU {
                 let m = mem.read(addr);
                 let (v, c) = m.overflowing_shl(1);
                 self.status_register.carry_flag = c;
-                //self.write_mem(val);
             }
         }
 
