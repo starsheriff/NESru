@@ -591,11 +591,33 @@ impl CPU {
             self.status_register.carry_flag = true;
             self.status_register.zero_flag = true;
         }
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction CPX (compare x register)
+    ///
+    /// This instruction compares the contents of the X register with another
+    /// memory held value and sets the zero and carry flags as appropriate.
+    ///
+    /// TODO: tests
     fn cpx(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+
+        let r = self.accumulator.wrapping_sub(m);
+        self.update_negative_flag(r);
+
+        if self.index_x > m {
+            self.status_register.carry_flag = true;
+        } else if self.index_x == m {
+            self.status_register.carry_flag = true;
+            self.status_register.zero_flag = true;
+        }
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn cpy(&mut self, mem: &mut Memory, opi: &OpInfo) {
