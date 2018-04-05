@@ -307,6 +307,16 @@ impl CPU {
             // CLV (clear overflow flag)
             0xB8 => self.clv(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // CMP (compare)
+            0xC9 => self.cmp(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0xC5 => self.cmp(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
+            0xD5 => self.cmp(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
+            0xCD => self.cmp(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
+            0xDD => self.cmp(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 4}),
+            0xD9 => self.cmp(mem, &OpInfo{mode: AbsoluteY, bytes: 3, cycles: 4}),
+            0xC1 => self.cmp(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
+            0xD1 => self.cmp(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
