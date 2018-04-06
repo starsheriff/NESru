@@ -1,6 +1,7 @@
 use cpu::opinfo::{OpInfo, OP_INFO};
 use cpu::status_register::StatusRegister;
 use cpu::utils;
+use std::fmt;
 
 use memory::{self, Memory};
 
@@ -41,6 +42,16 @@ pub struct CPU {
 
     /// count the total amount of cycles spent
     cycles: usize,
+}
+
+impl fmt::Display for CPU {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "CPU: a:{:#04X}, s:{:#04X}, p:{:#04X}, x:{:#04X}, y:{:#04X}",
+            self.accumulator, self.stack_pointer, self.program_counter, self.index_x, self.index_y
+        )
+    }
 }
 
 impl CPU {
@@ -1243,6 +1254,21 @@ mod tests {
 
         assert_eq!(cpu.pop16(&mut mem), 0xAA42);
         assert_eq!(cpu.stack_pointer, sp_before);
+    }
+
+    #[test]
+    fn test_cpu_display() {
+        let mut cpu = CPU::new();
+        cpu.accumulator = 0x01;
+        cpu.stack_pointer = 0x02;
+        cpu.program_counter = 0x03;
+        cpu.index_x = 0x04;
+        cpu.index_y = 0x05;
+
+        let res = format!("{}", cpu);
+        let exp = "CPU: a:0x01, s:0x02, p:0x03, x:0x04, y:0x05";
+
+        assert_eq!(res, exp);
     }
 
 }
