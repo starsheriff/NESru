@@ -339,7 +339,14 @@ impl CPU {
             0x88 => self.dey(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
             // EOR (exclusive or)
-            //0x => self.dec(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+            0x49 => self.eor(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0x45 => self.eor(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
+            0x55 => self.eor(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
+            0x4D => self.eor(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
+            0x5D => self.eor(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 4}),
+            0x59 => self.eor(mem, &OpInfo{mode: AbsoluteY, bytes: 3, cycles: 4}),
+            0x41 => self.eor(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
+            0x51 => self.eor(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
