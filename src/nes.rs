@@ -1,4 +1,14 @@
 //! This module represents the NES console system.
+//!
+//! # Ideas
+//!
+//! * The main program launches a new nes instance each time a new rom is loaded.
+//! * nes.run() is launched in a dedicated thread. All I/O works via shared
+//!   resources. That is the framebuffer and controls as far as I can see atm.
+//!
+//! # Open Questions
+//!
+//! * once the rom is loaded, where is it put in memory?
 
 use cpu::cpu::CPU;
 use memory::Memory;
@@ -34,10 +44,6 @@ impl Console {
         }
     }
 
-    pub fn poweron(&mut self) {
-        self.cpu.powerup(&mut self.mem);
-    }
-
     pub fn reset(&mut self) {
         self.cpu.reset(&mut self.mem);
     }
@@ -56,7 +62,10 @@ impl Console {
 
     pub fn pause(&mut self) {}
 
-    pub fn save(&mut self) {}
+    /// Store the state of the system
+    pub fn save(&mut self, path: &str) {}
+
+    pub fn load(&mut self, path: &str) {}
 
     pub fn poweroff(&mut self) {}
 }
