@@ -84,8 +84,8 @@ impl CPU {
 
     /// Update the zero flag of the cpus status register. This is a common call
     /// in many instructions.
-    fn update_zero_flag(&mut self) {
-        if self.accumulator == 0x00 {
+    fn update_zero_flag(&mut self, r: u8) {
+        if r == 0x00 {
             self.status_register.zero_flag = true;
         }
     }
@@ -326,6 +326,21 @@ impl CPU {
             0xC4 => self.cpx(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
             0xCC => self.cpx(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
 
+            // DEC (decrement memory)
+            0xC6 => self.dec(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 5}),
+            0xD6 => self.dec(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 6}),
+            0xCE => self.dec(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 6}),
+            0xDE => self.dec(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 7}),
+
+            // DEX (decrement x register)
+            0xCA => self.dex(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
+            // DEY (decrement x register)
+            0x88 => self.dey(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
+            // EOR (exclusive or)
+            //0x => self.dec(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -360,8 +375,8 @@ impl CPU {
 
         self.status_register.overflow_flag = utils::calculate_overflow_bit(a, m, self.accumulator);
 
-        self.update_zero_flag();
         let a = self.accumulator;
+        self.update_zero_flag(a);
         self.update_negative_flag(a);
     }
 
@@ -376,8 +391,8 @@ impl CPU {
 
         self.accumulator = a & m;
 
-        self.update_zero_flag();
         let a = self.accumulator;
+        self.update_zero_flag(a);
         self.update_negative_flag(a);
     }
 
@@ -403,8 +418,8 @@ impl CPU {
             }
         }
 
-        self.update_zero_flag();
         let a = self.accumulator;
+        self.update_zero_flag(a);
         self.update_negative_flag(a);
     }
 
@@ -525,7 +540,6 @@ impl CPU {
         // TODO: load interrupt vector
         self.status_register.break_command = true;
     }
-
 
     /// CPU instruction: BVC (branch if overflow clear)
     ///
@@ -653,21 +667,55 @@ impl CPU {
         }
 
         self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: DEC (decrememt memory)
+    ///
+    /// Subtracts one from the value held at a specified memory location
+    /// setting the zero and negative flags as appropriate.
     fn dec(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+        let r = m.wrapping_sub(1);
+
+        mem.write(addr, r);
+
+        self.update_negative_flag(r);
+        self.update_zero_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: DEX (decrement x register)
+    ///
+    /// Subtracts one from the X register setting the zero and negative flags
+    /// as appropriate.
     fn dex(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.index_x.wrapping_sub(1);
+
+        self.index_x = r;
+        self.update_negative_flag(r);
+        self.update_zero_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: DEY (decrement y register)
+    ///
+    /// Subtracts one from the Y register setting the zero and negative flags
+    /// as appropriate.
     fn dey(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.index_y.wrapping_sub(1);
+
+        self.index_y = r;
+        self.update_negative_flag(r);
+        self.update_zero_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn eor(&mut self, mem: &mut Memory, opi: &OpInfo) {
@@ -1112,8 +1160,8 @@ mod tests {
         let cycles_after = cpu.cycles;
         let pc_after = cpu.program_counter;
 
-        assert_eq!(cycles_after-cycles_before, 3);
-        assert_eq!(pc_after-pc_before, 2);
+        assert_eq!(cycles_after - cycles_before, 3);
+        assert_eq!(pc_after - pc_before, 2);
         assert_eq!(cpu.status_register.overflow_flag, true);
         assert_eq!(cpu.status_register.negative_flag, true);
     }
@@ -1126,7 +1174,7 @@ mod tests {
         // a < m
         cpu.powerup(&mut mem);
         mem.write(cpu.program_counter, 0xC9);
-        mem.write(cpu.program_counter+1, 0x04);
+        mem.write(cpu.program_counter + 1, 0x04);
         cpu.accumulator = 0x02;
 
         cpu.step(&mut mem);
@@ -1138,7 +1186,7 @@ mod tests {
         // a > m
         cpu.powerup(&mut mem);
         mem.write(cpu.program_counter, 0xC9);
-        mem.write(cpu.program_counter+1, 0x04);
+        mem.write(cpu.program_counter + 1, 0x04);
         cpu.accumulator = 0x06;
 
         cpu.step(&mut mem);
@@ -1150,7 +1198,7 @@ mod tests {
         // a == m
         cpu.powerup(&mut mem);
         mem.write(cpu.program_counter, 0xC9);
-        mem.write(cpu.program_counter+1, 0x04);
+        mem.write(cpu.program_counter + 1, 0x04);
         cpu.accumulator = 0x04;
 
         cpu.step(&mut mem);
