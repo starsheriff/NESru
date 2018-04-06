@@ -8,7 +8,7 @@ type MemoryAddress = u16;
 type PageCrossed = bool;
 
 // TODO: set correct address
-static STACK_BASE_ADDRESS: u16 = 0x4000;
+static STACK_BASE_ADDRESS: u16 = 0x0100;
 
 pub struct OpResponse {
     bytes_consumed: usize,
@@ -316,6 +316,16 @@ impl CPU {
             0xC1 => self.cmp(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
             0xD1 => self.cmp(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
 
+            // CPX
+            0xE0 => self.cpx(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0xE4 => self.cpx(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
+            0xEC => self.cpx(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
+
+            // CPY
+            0xC0 => self.cpx(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0xC4 => self.cpx(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
+            0xCC => self.cpx(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -602,6 +612,7 @@ impl CPU {
     /// memory held value and sets the zero and carry flags as appropriate.
     ///
     /// TODO: tests
+    /// TODO: refactor: pull duplicate code out
     fn cpx(&mut self, mem: &mut Memory, opi: &OpInfo) {
         let addr = self.get_address(mem, opi.mode).unwrap();
         let m = mem.read(addr);
@@ -620,9 +631,28 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: CPY (compare y register)
+    ///
+    /// This instruction compares the contents of the Y register with another
+    /// memory held value and sets the zero and carry flags as appropriate.
+    ///
+    /// TODO: tests
+    /// TODO: refactor: pull duplicate code out
     fn cpy(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+
+        let r = self.accumulator.wrapping_sub(m);
+        self.update_negative_flag(r);
+
+        if self.index_y > m {
+            self.status_register.carry_flag = true;
+        } else if self.index_y == m {
+            self.status_register.carry_flag = true;
+            self.status_register.zero_flag = true;
+        }
+
+        self.cycles += opi.cycles;
     }
 
     fn dec(&mut self, mem: &mut Memory, opi: &OpInfo) {
