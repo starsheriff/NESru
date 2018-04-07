@@ -753,8 +753,17 @@ impl CPU {
     /// An exclusive OR is performed, bit by bit, on the accumulator contents
     /// using the contents of a byte of memory.
     fn eor(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+
+        let r = self.accumulator ^ m;
+
+        let a = self.accumulator;
+        self.update_zero_flag(a); // sure that it is not r?
+        self.update_negative_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     /// CPU instruction: INC (increment memory)
