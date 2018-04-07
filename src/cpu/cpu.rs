@@ -359,6 +359,18 @@ impl CPU {
             0x41 => self.eor(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
             0x51 => self.eor(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
 
+            // INC (increment memory)
+            0xE6 => self.inc(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 5}),
+            0xF6 => self.inc(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 6}),
+            0xEE => self.inc(mem, &OpInfo{mode: ZeroPage, bytes: 3, cycles: 6}),
+            0xFE => self.inc(mem, &OpInfo{mode: ZeroPage, bytes: 3, cycles: 7}),
+
+            // INX (increment x register)
+            0xE8 => self.dey(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
+            // INY (increment y register)
+            0xC8 => self.dey(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -736,24 +748,61 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: EOR (exclusive or)
+    ///
+    /// An exclusive OR is performed, bit by bit, on the accumulator contents
+    /// using the contents of a byte of memory.
     fn eor(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
     }
 
+    /// CPU instruction: INC (increment memory)
+    ///
+    /// Adds one to the value held at a specified memory location setting the
+    /// zero and negative flags as appropriate.
     fn inc(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+        let r = m.wrapping_add(1);
+
+        mem.write(addr, r);
+
+        self.update_negative_flag(r);
+        self.update_zero_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: INX (increment x register)
+    ///
+    /// Adds one to the X register setting the zero and negative flags as
+    /// appropriate.
     fn inx(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.index_x.wrapping_add(1);
+
+        self.index_x = r;
+        self.update_negative_flag(r);
+        self.update_zero_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: INY (increment x register)
+    ///
+    /// Adds one to the Y register setting the zero and negative flags as
+    /// appropriate.
     fn iny(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.index_y.wrapping_add(1);
+
+        self.index_y = r;
+        self.update_negative_flag(r);
+        self.update_zero_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn jmp(&mut self, mem: &mut Memory, opi: &OpInfo) {
