@@ -389,6 +389,9 @@ impl CPU {
             0x4C => self.jmp(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 3}),
             0x6C => self.jmp(mem, &OpInfo{mode: Indirect, bytes: 3, cycles: 5}),
 
+            // JSR (jump to subrouting)
+            0x20 => self.jsr(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 6}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -832,6 +835,9 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: JMP (jump)
+    ///
+    /// Sets the program counter to the address specified by the operand.
     fn jmp(&mut self, mem: &mut Memory, opi: &OpInfo) {
         let addr = self.get_address(mem, opi.mode).unwrap();
 
@@ -840,9 +846,19 @@ impl CPU {
         self.cycles += opi.cycles;
     }
 
+    /// CPU instruction: JSR (jump to subroutine)
+    ///
+    /// The JSR instruction pushes the address (minus one) of the return point
+    /// on to the stack and then sets the program counter to the target memory address.
     fn jsr(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        // TODO: verify if correct: which is the return point address?
+        let return_address = self.program_counter - 1;
+        self.push16(mem, return_address);
+
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        self.program_counter = self.read16(mem, addr);
+
+        self.cycles += opi.cycles;
     }
 
     fn lda(&mut self, mem: &mut Memory, opi: &OpInfo) {
