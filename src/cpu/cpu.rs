@@ -30,6 +30,7 @@ pub enum AddressingMode {
     AbsoluteY,
     IndexedIndirect,
     IndirectIndexed,
+    Indirect,
 }
 
 pub struct CPU {
@@ -190,6 +191,19 @@ impl CPU {
                 let b = a.wrapping_add(self.index_y);
 
                 Some(b as u16)
+            }
+            Indirect => {
+                // TODO: test
+                let addr_lo = mem.read(self.program_counter + 1) as u16;
+                let addr_hi = match addr_lo {
+                    0xFF => {
+                        // bug in 6502
+                        0x0000
+                    }
+                    _ => mem.read(self.program_counter + 2) as u16,
+                };
+
+                Some(addr_hi << 8 + addr_lo)
             }
         }
     }
@@ -370,6 +384,10 @@ impl CPU {
 
             // INY (increment y register)
             0xC8 => self.dey(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
+            // JMP (jump)
+            0x4C => self.jmp(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 3}),
+            0x6C => self.jmp(mem, &OpInfo{mode: Indirect, bytes: 3, cycles: 5}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -815,8 +833,11 @@ impl CPU {
     }
 
     fn jmp(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+
+        self.program_counter = self.read16(mem, addr);
+
+        self.cycles += opi.cycles;
     }
 
     fn jsr(&mut self, mem: &mut Memory, opi: &OpInfo) {
