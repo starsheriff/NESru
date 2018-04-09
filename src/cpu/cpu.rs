@@ -246,9 +246,6 @@ impl CPU {
     }
 
     pub fn step(&mut self, mem: &mut Memory) {
-        // TODO: really required?
-        //self.cycles += 1;
-
         // TODO: check for interrupts
         //
 
