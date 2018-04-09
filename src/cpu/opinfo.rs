@@ -222,13 +222,14 @@ pub static OP_INFO: [OpInfo; 256] = [
 
     // 0xA0
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
+    OpInfo{mode: Immediate, bytes: 2, cycles: 2}, // ldx
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
-    OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
+
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
@@ -238,6 +239,7 @@ pub static OP_INFO: [OpInfo; 256] = [
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
 
+    // 0xB0
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},
     OpInfo{mode: Immediate, bytes: 0xFF, cycles: 0xFF},

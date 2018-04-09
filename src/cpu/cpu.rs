@@ -402,6 +402,14 @@ impl CPU {
             0xA1 => self.lda(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 6}),
             0xB1 => self.lda(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 5}),
 
+            // LDX (load x register)
+            0xA2 => self.ldx(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0xA6 => self.ldx(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
+            0xB6 => self.ldx(mem, &OpInfo{mode: ZeroPageY, bytes: 2, cycles: 4}),
+            0xAE => self.ldx(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
+            0xBE => self.ldx(mem, &OpInfo{mode: AbsoluteY, bytes: 3, cycles: 4}),
+
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -887,9 +895,20 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: LDX (load x register)
+    ///
+    /// Loads a byte of memory into the X register setting the zero and
+    /// negative flags as appropriate.
     fn ldx(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+
+        self.index_x = m;
+        self.update_zero_flag(m);
+        self.update_negative_flag(m);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn ldy(&mut self, mem: &mut Memory, opi: &OpInfo) {
