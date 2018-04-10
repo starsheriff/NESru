@@ -413,6 +413,13 @@ impl CPU {
             0xAC => self.ldy(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
             0xBC => self.ldy(mem, &OpInfo{mode: AbsoluteX , bytes: 3, cycles: 4}),
 
+            // LSR (logical shift right)
+            0x4A => self.lsr(mem, &OpInfo{mode: Accumulator, bytes: 1, cycles: 2}),
+            0x46 => self.lsr(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 5}),
+            0x56 => self.lsr(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 6}),
+            0x4E => self.lsr(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 6}),
+            0x5E => self.lsr(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 7}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -930,9 +937,30 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: LSR (logical shift left)
+    ///
+    /// Each of the bits in A or M is shift one place to the right. The bit
+    /// that was in bit 0 is shifted into the carry flag. Bit 7 is set to zero.
     fn lsr(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        match opi.mode {
+            AddressingMode::Accumulator => {
+                self.status_register.carry_flag = (self.accumulator & 0x01) == 0x01;
+                let r = self.accumulator >> 1;
+                self.update_negative_flag(r);
+                self.accumulator = r;
+            }
+            _ => {
+                let addr = self.get_address(mem, opi.mode).unwrap();
+                let m = mem.read(addr);
+
+                let r = m >> 1;
+                self.update_negative_flag(r);
+                mem.write(addr, r);
+            }
+        }
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn nop(&mut self, mem: &mut Memory, opi: &OpInfo) {
