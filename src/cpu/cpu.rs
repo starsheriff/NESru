@@ -420,6 +420,9 @@ impl CPU {
             0x4E => self.lsr(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 6}),
             0x5E => self.lsr(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 7}),
 
+            // NOP (no operation)
+            0xEA => self.nop(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -963,9 +966,13 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: NOP (no operation)
+    ///
+    /// The NOP instruction causes no changes to the processor other than the
+    /// normal incrementing of the program counter to the next instruction.
     fn nop(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn ora(&mut self, mem: &mut Memory, opi: &OpInfo) {
