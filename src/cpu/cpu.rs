@@ -434,7 +434,10 @@ impl CPU {
             0x11 => self.ora(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
 
             // PHA (push accumulator)
-            0x08 => self.pha(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
+            0x48 => self.pha(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
+
+            // PHP (push status register)
+            0x08 => self.php(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -1019,9 +1022,13 @@ impl CPU {
 
     /// CPU instruction: PHP (push processor status)
     ///
+    /// Pushes a copy of the status flags on to the stack.
     fn php(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let p = self.status_register.to_u8();
+        self.push(mem, p);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn pla(&mut self, mem: &mut Memory, opi: &OpInfo) {
