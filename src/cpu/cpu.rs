@@ -439,6 +439,9 @@ impl CPU {
             // PHP (push status register)
             0x08 => self.php(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
 
+            // PLA (pull accumulator)
+            0x68 => self.pla(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -1031,9 +1034,17 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: PLA (pull accumulator)
+    ///
+    /// Pulls an 8 bit value from the stack and into the accumulator. The zero
+    /// and negative flags are set as appropriate.
     fn pla(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let a = self.pop(mem);
+        self.accumulator = a;
+        self.update_zero_flag(a);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn plp(&mut self, mem: &mut Memory, opi: &OpInfo) {
