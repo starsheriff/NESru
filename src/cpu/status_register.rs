@@ -35,9 +35,10 @@ impl StatusRegister {
         }
     }
 
-    pub fn from_u8() -> StatusRegister {
-        //TODO: implementation
-        StatusRegister::new()
+    pub fn from_u8(val: u8) -> StatusRegister {
+        let a = StatusRegister::new();
+        a.set_all(val);
+        a
     }
 
     pub fn set_all(&mut self, b: u8) {

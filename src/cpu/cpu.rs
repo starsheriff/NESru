@@ -442,6 +442,9 @@ impl CPU {
             // PLA (pull accumulator)
             0x68 => self.pla(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
 
+            // PLP (pull status register)
+            0x28 => self.pla(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -1047,9 +1050,16 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: PLP (pull status register)
+    ///
+    /// Pulls an 8 bit value from the stack and into the processor flags. The
+    /// flags will take on new states as determined by the value pulled.
     fn plp(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let p = StatusRegister::from_u8(self.pop(mem));
+        self.status_register = p;
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn rol(&mut self, mem: &mut Memory, opi: &OpInfo) {
