@@ -423,6 +423,19 @@ impl CPU {
             // NOP (no operation)
             0xEA => self.nop(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // OAR (logical inclusive or)
+            0x09 => self.ora(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0x05 => self.ora(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 3}),
+            0x15 => self.ora(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
+            0x0D => self.ora(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 4}),
+            0x1D => self.ora(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 4}),
+            0x19 => self.ora(mem, &OpInfo{mode: AbsoluteY, bytes: 3, cycles: 4}),
+            0x01 => self.ora(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
+            0x11 => self.ora(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
+
+            // PHA (push accumulator)
+            0x08 => self.pha(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 3}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -809,9 +822,9 @@ impl CPU {
         let m = mem.read(addr);
 
         let r = self.accumulator ^ m;
+        self.accumulator = r;
 
-        let a = self.accumulator;
-        self.update_zero_flag(a); // sure that it is not r?
+        self.update_zero_flag(r);
         self.update_negative_flag(r);
 
         self.cycles += opi.cycles;
@@ -975,9 +988,22 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: ORA (logical inclusive or)
+    ///
+    /// An inclusive OR is performed, bit by bit, on the accumulator contents
+    /// using the contents of a byte of memory.
     fn ora(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+
+        let r = self.accumulator | m;
+        self.accumulator = r;
+
+        self.update_zero_flag(r);
+        self.update_negative_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn pha(&mut self, mem: &mut Memory, opi: &OpInfo) {
