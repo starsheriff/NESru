@@ -1006,11 +1006,19 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: PHA (push accumulator)
+    ///
+    /// Pushes a copy of the accumulator on to the stack.
     fn pha(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let a = self.accumulator;
+        self.push(mem, a);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: PHP (push processor status)
+    ///
     fn php(&mut self, mem: &mut Memory, opi: &OpInfo) {
         // TODO
         panic!("not implemented");
