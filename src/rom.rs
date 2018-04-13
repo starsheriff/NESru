@@ -31,8 +31,7 @@ impl ParseError {
 
 #[derive(Debug)]
 pub enum ParseErrorKind {
-    INESHeaderNotFound,
-    IncorrectHeader,
+    HeaderError,
 }
 
 pub fn parse_ines(b: &Vec<u8>) -> Result<(), ParseError> {
@@ -45,14 +44,14 @@ pub fn parse_ines_header(b: &Vec<u8>) -> Result<(), ParseError> {
     if str::from_utf8(&b[0..3]).unwrap() != "NES" {
         return Err(ParseError::new(
             String::from("could not find NES"),
-            ParseErrorKind::INESHeaderNotFound,
+            ParseErrorKind::HeaderError,
         ));
     }
 
     if b[3] != 0x1A {
         return Err(ParseError::new(
             String::from(format!("4th byte is not 0x1A but {}", b[3])),
-            ParseErrorKind::IncorrectHeader,
+            ParseErrorKind::HeaderError,
         ));
     }
 
