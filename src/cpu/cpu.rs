@@ -1085,19 +1085,19 @@ impl CPU {
     /// filled with the current value of the carry flag whilst the old bit 7
     /// becomes the new carry flag value.
     fn rol(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        let (r,c) = match opi.mode {
+        let (r, c) = match opi.mode {
             AddressingMode::Accumulator => {
                 let (r, c) = self.accumulator.overflowing_shl(1);
 
                 self.accumulator = r;
-                (r,c)
+                (r, c)
             }
             _ => {
                 let addr = self.get_address(mem, opi.mode).unwrap();
                 let (r, c) = mem.read(addr).overflowing_shl(1);
 
                 mem.write(addr, r);
-                (r,c)
+                (r, c)
             }
         };
 
@@ -1115,19 +1115,19 @@ impl CPU {
     /// filled with the current value of the carry flag whilst the old bit 0
     /// becomes the new carry flag value.
     fn ror(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        let (r,c) = match opi.mode {
+        let (r, c) = match opi.mode {
             AddressingMode::Accumulator => {
                 let (r, c) = self.accumulator.overflowing_shr(1);
 
                 self.accumulator = r;
-                (r,c)
+                (r, c)
             }
             _ => {
                 let addr = self.get_address(mem, opi.mode).unwrap();
                 let (r, c) = mem.read(addr).overflowing_shr(1);
 
                 mem.write(addr, r);
-                (r,c)
+                (r, c)
             }
         };
 
@@ -1149,12 +1149,17 @@ impl CPU {
         self.program_counter = self.pop16(mem);
 
         self.cycles += opi.cycles;
-        self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: RTS (return from subroutine)
+    ///
+    /// The RTS instruction is used at the end of a subroutine to return to the
+    /// calling routine. It pulls the program counter (minus one) from the stack.
     fn rts(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        // TODO: verify the return address? minus one?
+        self.program_counter = self.pop16(mem);
+
+        self.cycles += opi.cycles;
     }
 
     fn sbc(&mut self, mem: &mut Memory, opi: &OpInfo) {
