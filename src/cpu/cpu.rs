@@ -459,6 +459,9 @@ impl CPU {
             0x6E => self.ror(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 6}),
             0x7E => self.ror(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 7}),
 
+            // RTI (return from interrupt)
+            0x40 => self.rti(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 6}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -1136,9 +1139,17 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: RTI (return from interrupt)
+    ///
+    /// The RTI instruction is used at the end of an interrupt processing
+    /// routine. It pulls the processor flags from the stack followed by the
+    /// program counter.
     fn rti(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.status_register = StatusRegister::from_u8(self.pop(mem));
+        self.program_counter = self.pop16(mem);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn rts(&mut self, mem: &mut Memory, opi: &OpInfo) {
