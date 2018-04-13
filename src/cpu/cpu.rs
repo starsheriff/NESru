@@ -452,6 +452,13 @@ impl CPU {
             0x2E => self.rol(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 6}),
             0x3E => self.rol(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 7}),
 
+            // ROR (rotate right)
+            0x6A => self.ror(mem, &OpInfo{mode: Accumulator, bytes: 1, cycles: 2}),
+            0x66 => self.ror(mem, &OpInfo{mode: ZeroPage, bytes: 2, cycles: 5}),
+            0x76 => self.ror(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 6}),
+            0x6E => self.ror(mem, &OpInfo{mode: Absolute, bytes: 3, cycles: 6}),
+            0x7E => self.ror(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 7}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -1099,9 +1106,34 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: ROR (rotate right)
+    ///
+    /// Move each of the bits in either A or M one place to the right. Bit 7 is
+    /// filled with the current value of the carry flag whilst the old bit 0
+    /// becomes the new carry flag value.
     fn ror(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let (r,c) = match opi.mode {
+            AddressingMode::Accumulator => {
+                let (r, c) = self.accumulator.overflowing_shr(1);
+
+                self.accumulator = r;
+                (r,c)
+            }
+            _ => {
+                let addr = self.get_address(mem, opi.mode).unwrap();
+                let (r, c) = mem.read(addr).overflowing_shr(1);
+
+                mem.write(addr, r);
+                (r,c)
+            }
+        };
+
+        self.status_register.carry_flag = c;
+        self.update_negative_flag(r);
+        self.update_zero_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn rti(&mut self, mem: &mut Memory, opi: &OpInfo) {
