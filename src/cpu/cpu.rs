@@ -472,6 +472,10 @@ impl CPU {
             0xE1 => self.sbc(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
             0xF1 => self.sbc(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
 
+            // SEC (set carry flag)
+            0x38 => self.rti(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
+
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -1171,7 +1175,7 @@ impl CPU {
         self.cycles += opi.cycles;
     }
 
-    /// CPU instruction: Subtract with Carry
+    /// CPU instruction: SBC (subtract with carry)
     ///
     /// This instruction subtracts the contents of a memory location to the
     /// accumulator together with the not of the carry bit. If overflow occurs
@@ -1193,9 +1197,14 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: SEC (set carry flag)
+    ///
+    /// Set the carry flag to one.
     fn sec(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.status_register.carry_flag = true;
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn sed(&mut self, mem: &mut Memory, opi: &OpInfo) {
