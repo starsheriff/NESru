@@ -462,6 +462,17 @@ impl CPU {
             // RTI (return from interrupt)
             0x40 => self.rti(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 6}),
 
+            // SBC (subtract with carry)
+            0xE9 => self.sbc(mem, &OpInfo{mode: Immediate, bytes: 2, cycles: 2}),
+            0xE5 => self.sbc(mem, &OpInfo{mode: ZeroPage,  bytes: 2, cycles: 3}),
+            0xF5 => self.sbc(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
+            0xED => self.sbc(mem, &OpInfo{mode: Absolute,  bytes: 3, cycles: 4}),
+            0xFD => self.sbc(mem, &OpInfo{mode: AbsoluteX, bytes: 3, cycles: 4}),
+            0xF9 => self.sbc(mem, &OpInfo{mode: AbsoluteY, bytes: 3, cycles: 4}),
+            0xE1 => self.sbc(mem, &OpInfo{mode: IndexedIndirect, bytes: 2, cycles: 6}),
+            0xF1 => self.sbc(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
+
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -1160,9 +1171,26 @@ impl CPU {
         self.cycles += opi.cycles;
     }
 
+    /// CPU instruction: Subtract with Carry
+    ///
+    /// This instruction subtracts the contents of a memory location to the
+    /// accumulator together with the not of the carry bit. If overflow occurs
+    /// the carry bit is clear, this enables multiple byte subtraction to be
+    /// performed.
     fn sbc(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+        let m = mem.read(addr);
+        let a = self.accumulator;
+
+        let r = self.accumulator - m - (1 - self.status_register.carry_flag as u8);
+        self.accumulator = r;
+
+        self.status_register.overflow_flag = utils::calculate_overflow_bit(a, m, r);
+        self.update_zero_flag(r);
+        self.update_negative_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn sec(&mut self, mem: &mut Memory, opi: &OpInfo) {

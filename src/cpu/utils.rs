@@ -1,6 +1,8 @@
 /// most significatn bit
 const msb: u8 = 0x01 << 7;
 
+/// Checks if the overflow bit has to be set. `A` and `B` denote the values of
+/// the operands of an arithmetic operation, `C` the result of the operation.
 ///
 ///
 /// num1sign num2sign sumsign
