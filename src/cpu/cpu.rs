@@ -473,8 +473,10 @@ impl CPU {
             0xF1 => self.sbc(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 5}),
 
             // SEC (set carry flag)
-            0x38 => self.rti(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+            0x38 => self.sec(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // SED (set decimal flag)
+            0xF8 => self.sed(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
 
             // TODO: more remaining optcodes
@@ -1207,9 +1209,14 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: SED (set decimal flag)
+    ///
+    /// Set the decimal mode flag to one.
     fn sed(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.status_register.decimal_mode = true;
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn sei(&mut self, mem: &mut Memory, opi: &OpInfo) {
