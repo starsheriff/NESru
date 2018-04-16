@@ -921,7 +921,6 @@ impl CPU {
     /// The JSR instruction pushes the address (minus one) of the return point
     /// on to the stack and then sets the program counter to the target memory address.
     fn jsr(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO: verify if correct: which is the return point address?
         let return_address = self.program_counter - 1;
         self.push16(mem, return_address);
 
@@ -1156,8 +1155,7 @@ impl CPU {
     /// The RTS instruction is used at the end of a subroutine to return to the
     /// calling routine. It pulls the program counter (minus one) from the stack.
     fn rts(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO: verify the return address? minus one?
-        self.program_counter = self.pop16(mem);
+        self.program_counter = self.pop16(mem) + 1;
 
         self.cycles += opi.cycles;
     }
