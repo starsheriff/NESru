@@ -491,10 +491,14 @@ impl CPU {
             0x91 => self.sta(mem, &OpInfo{mode: IndirectIndexed, bytes: 2, cycles: 6}),
 
             // STX (store x register)
-            0x84 => self.stx(mem, &OpInfo{mode: ZeroPage,  bytes: 2, cycles: 3}),
-            0x94 => self.stx(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
-            0x8C => self.stx(mem, &OpInfo{mode: Absolute,  bytes: 3, cycles: 4}),
+            0x86 => self.stx(mem, &OpInfo{mode: ZeroPage,  bytes: 2, cycles: 3}),
+            0x96 => self.stx(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
+            0x8E => self.stx(mem, &OpInfo{mode: Absolute,  bytes: 3, cycles: 4}),
 
+            // STY (store y register)
+            0x84 => self.sty(mem, &OpInfo{mode: ZeroPage,  bytes: 2, cycles: 3}),
+            0x94 => self.sty(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
+            0x8C => self.sty(mem, &OpInfo{mode: Absolute,  bytes: 3, cycles: 4}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -1270,9 +1274,16 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: STY (store y register)
+    ///
+    /// Stores the contents of the Y register into memory.
     fn sty(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let addr = self.get_address(mem, opi.mode).unwrap();
+
+        mem.write(addr, self.index_y);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn tax(&mut self, mem: &mut Memory, opi: &OpInfo) {
