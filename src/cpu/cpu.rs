@@ -500,6 +500,9 @@ impl CPU {
             0x94 => self.sty(mem, &OpInfo{mode: ZeroPageX, bytes: 2, cycles: 4}),
             0x8C => self.sty(mem, &OpInfo{mode: Absolute,  bytes: 3, cycles: 4}),
 
+            // TAX (transfer accumulator to x register)
+            0xAA => self.tax(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -1286,9 +1289,19 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: TAX (transfer accumulator to x register)
+    ///
+    /// Copies the current contents of the accumulator into the X register and
+    /// sets the zero and negative flags as appropriate.
     fn tax(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.accumulator;
+
+        self.index_x = r;
+        self.update_zero_flag(r);
+        self.update_negative_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn tay(&mut self, mem: &mut Memory, opi: &OpInfo) {
