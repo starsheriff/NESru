@@ -503,6 +503,9 @@ impl CPU {
             // TAX (transfer accumulator to x register)
             0xAA => self.tax(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // TAY (transfer accumulator to y register)
+            0xA8 => self.tay(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
         };
@@ -1304,9 +1307,19 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: TAY (transfer accumulator to y register)
+    ///
+    /// Copies the current contents of the accumulator into the Y register and
+    /// sets the zero and negative flags as appropriate.
     fn tay(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.accumulator;
+
+        self.index_y = r;
+        self.update_zero_flag(r);
+        self.update_negative_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn tsx(&mut self, mem: &mut Memory, opi: &OpInfo) {
