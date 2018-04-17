@@ -512,6 +512,9 @@ impl CPU {
             // TXA (transfer x register to accumulator)
             0x8A => self.txa(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // TXS (transfer x register to stack pointer)
+            0x9A => self.txa(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -1345,6 +1348,9 @@ impl CPU {
     }
 
     /// CPU instruction: TXA (transfer x register to accumulator)
+    ///
+    /// Copies the current contents of the X register into the accumulator and
+    /// sets the zero and negative flags as appropriate.
     fn txa(&mut self, mem: &mut Memory, opi: &OpInfo) {
         let r = self.index_x;
 
@@ -1356,9 +1362,14 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: TXS (transfer x register to stack pointer)
+    ///
+    /// Copies the current contents of the X register into the stack register.
     fn txs(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        self.stack_pointer = self.index_x;
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn tya(&mut self, mem: &mut Memory, opi: &OpInfo) {
