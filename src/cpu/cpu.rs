@@ -513,8 +513,10 @@ impl CPU {
             0x8A => self.txa(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
             // TXS (transfer x register to stack pointer)
-            0x9A => self.txa(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+            0x9A => self.txs(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
+            // TYA (transfer y register to accumulator)
+            0x98 => self.tya(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -1372,9 +1374,19 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: TYA (transfer y register to accumulator)
+    ///
+    /// Copies the current contents of the Y register into the accumulator and
+    /// sets the zero and negative flags as appropriate.
     fn tya(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.index_y;
+
+        self.accumulator = r;
+        self.update_zero_flag(r);
+        self.update_negative_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 }
 
