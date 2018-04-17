@@ -507,7 +507,11 @@ impl CPU {
             0xA8 => self.tay(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
 
             // TSX (transfer stack pointer to x register)
-            0xBA => self.tay(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+            0xBA => self.tsx(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
+            // TXA (transfer x register to accumulator)
+            0x8A => self.txa(mem, &OpInfo{mode: Implicit, bytes: 1, cycles: 2}),
+
 
             // TODO: more remaining optcodes
             _ => panic!("not implemented"),
@@ -1340,9 +1344,16 @@ impl CPU {
         self.program_counter += opi.bytes as u16;
     }
 
+    /// CPU instruction: TXA (transfer x register to accumulator)
     fn txa(&mut self, mem: &mut Memory, opi: &OpInfo) {
-        // TODO
-        panic!("not implemented");
+        let r = self.index_x;
+
+        self.accumulator = r;
+        self.update_zero_flag(r);
+        self.update_negative_flag(r);
+
+        self.cycles += opi.cycles;
+        self.program_counter += opi.bytes as u16;
     }
 
     fn txs(&mut self, mem: &mut Memory, opi: &OpInfo) {
