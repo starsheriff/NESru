@@ -126,8 +126,7 @@ impl CPU {
     /// 1. detect page crossings. Where?
     ///     * Which modes?
     ///
-    fn get_address(&self, mem: &Memory, mode: AddressingMode) -> Option<u16> {
-        // TODO: detect page crossings!
+    fn get_address(&mut self, mem: &Memory, mode: AddressingMode) -> Option<u16> {
         use cpu::cpu::AddressingMode::*;
 
         match mode {
@@ -138,20 +137,24 @@ impl CPU {
                 Some((b << 8) + a)
             }
             AbsoluteX => {
-                // TODO: detect page crossing
-                let a = mem.read(self.program_counter + 1) as u16;
-                let b = mem.read(self.program_counter + 2) as u16;
-                let c = (b << 8) + a;
+                let a = self.read16(mem, self.program_counter + 1);
+                let addr = a + self.index_x as u16;
 
-                Some(c + self.index_x as u16)
+                if memory::page_crossed(a,  addr) {
+                    self.cycles += 1;
+                }
+
+                Some(addr)
             }
             AbsoluteY => {
-                // TODO: detect page crossing
-                let a = mem.read(self.program_counter + 1) as u16;
-                let b = mem.read(self.program_counter + 2) as u16;
-                let c = (b << 8) + a;
+                let a = self.read16(mem, self.program_counter + 1);
+                let addr = a + self.index_y as u16;
 
-                Some(c + self.index_y as u16)
+                if memory::page_crossed(a,  addr) {
+                    self.cycles += 1;
+                }
+
+                Some(addr)
             }
             Accumulator => None,
             Implicit => None,
@@ -166,14 +169,16 @@ impl CPU {
                 Some(e)
             }
             IndirectIndexed => {
-                // TODO: detect page crossing
                 let a = mem.read(self.program_counter + 1) as u16;
-                let b = mem.read(a) as u16;
-                let c = mem.read(a + 1) as u16;
-                let d = (c << 8) + b;
-                let e = d + self.index_y as u16;
+                let b = self.read16(mem, a);
 
-                Some(e)
+                let addr = b + self.index_y as u16;
+
+                if memory::page_crossed(b,  addr) {
+                    self.cycles += 1;
+                }
+
+                Some(addr)
             }
             Relative => {
                 let relative_value = mem.read(self.program_counter + 1);
@@ -209,8 +214,8 @@ impl CPU {
     }
 
     fn read16(&self, mem: &Memory, addr: u16) -> u16 {
-        let hi = mem.read(addr) as u16;
-        let lo = mem.read(addr + 1) as u16;
+        let lo = mem.read(addr) as u16;
+        let hi = mem.read(addr + 1) as u16;
 
         (hi << 8) + lo
     }
@@ -1562,7 +1567,7 @@ mod tests {
         mem.write(0x0005, 0xCC);
 
         let result = cpu.read16(&mem, 0x0004);
-        let expected = 0xAACC;
+        let expected = 0xCCAA;
         assert_eq!(result, expected);
     }
 
