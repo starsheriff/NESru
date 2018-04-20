@@ -3,7 +3,25 @@ use std::io::Read;
 use std::path::Path;
 use std::str;
 
+/// Limit the amount of data to read. In case a user accidentally wants to read
+/// a very large file as a ROM.
 const MAX_ROM_SIZE: u64 = 5 * 1024 * 1024;
+
+/// Structure representing a rom/cartridge of the NES system.
+pub struct Rom {
+}
+
+pub struct InesHeader {
+    prg_banks: usize,
+    chr_banks: usize,
+    control_1: u8,
+    control_2: u8,
+}
+
+/// Create a Rom from bytes in the Ines format
+fn FromInes(b: Vec<u8>) -> Result<Rom, ParseError> {
+    Ok(Rom{})
+}
 
 pub fn load<P>(fp: P) -> Vec<u8>
 where
