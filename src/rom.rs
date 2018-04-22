@@ -7,8 +7,15 @@ use std::str;
 /// a very large file as a ROM.
 const MAX_ROM_SIZE: u64 = 5 * 1024 * 1024;
 
+pub enum MirroringType {
+    Nothing,
+}
+
 /// Structure representing a rom/cartridge of the NES system.
 pub struct Rom {
+    prg: Vec<u8>,
+    chr: Vec<u8>,
+    mirroring_type: MirroringType,
 }
 
 pub struct InesHeader {
@@ -20,7 +27,7 @@ pub struct InesHeader {
 
 /// Create a Rom from bytes in the Ines format
 fn FromInes(b: Vec<u8>) -> Result<Rom, ParseError> {
-    Ok(Rom{})
+    Ok(Rom {prg: Vec::new(), chr: Vec::new(), mirroring_type: MirroringType::Nothing})
 }
 
 pub fn load<P>(fp: P) -> Vec<u8>
