@@ -18,16 +18,22 @@ pub struct Rom {
     mirroring_type: MirroringType,
 }
 
+/// Information contained in the header of ines files.
 pub struct InesHeader {
-    prg_banks: usize,
-    chr_banks: usize,
+    prg_banks: usize, // program rom banks, each 16 kB
+    chr_banks: usize, // character rom banks, each 8 kB
+    ram_banks: usize, // number of 8 kB ROM banks
     control_1: u8,
     control_2: u8,
 }
 
 /// Create a Rom from bytes in the Ines format
-fn FromInes(b: Vec<u8>) -> Result<Rom, ParseError> {
-    Ok(Rom {prg: Vec::new(), chr: Vec::new(), mirroring_type: MirroringType::Nothing})
+fn from_ines(b: Vec<u8>) -> Result<Rom, ParseError> {
+    Ok(Rom {
+        prg: Vec::new(),
+        chr: Vec::new(),
+        mirroring_type: MirroringType::Nothing,
+    })
 }
 
 pub fn load<P>(fp: P) -> Vec<u8>
@@ -65,7 +71,7 @@ pub fn parse_ines(b: &Vec<u8>) -> Result<(), ParseError> {
     Ok(())
 }
 
-pub fn parse_ines_header(b: &Vec<u8>) -> Result<(), ParseError> {
+pub fn parse_ines_header(b: &Vec<u8>) -> Result<InesHeader, ParseError> {
     if str::from_utf8(&b[0..3]).unwrap() != "NES" {
         return Err(ParseError::new(
             String::from("could not find NES"),
@@ -80,5 +86,11 @@ pub fn parse_ines_header(b: &Vec<u8>) -> Result<(), ParseError> {
         ));
     }
 
-    Ok(())
+    Ok(InesHeader {
+        prg_banks: b[4] as usize,
+        chr_banks: b[5] as usize,
+        control_1: b[6],
+        control_2: b[7],
+        ram_banks: b[8] as usize,
+    })
 }
